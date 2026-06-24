@@ -4,29 +4,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===========================================================================
+   Paleta baseada no site de referência (CONSEJ — Módulo Financeiro):
+   navy escuro + accent ciano/teal. O tema ESCURO é o padrão.
+   A sidebar é sempre navy escura (em ambos os temas).
+   =========================================================================== */
+
 :root,
+html.dark {
+  --bg-primary: #0e2939; /* cards */
+  --bg-secondary: #123449; /* superfícies elevadas */
+  --bg-tertiary: #011e32; /* fundo da página */
+  --ink-primary: #fafafa;
+  --ink-secondary: #c4cfd4;
+  --ink-tertiary: #92a2aa;
+  --line: #273e49;
+  --line-strong: #406577;
+
+  --brand-soft: rgba(0, 139, 173, 0.18);
+  --good-soft: rgba(32, 182, 145, 0.16);
+  --warn-soft: rgba(246, 168, 35, 0.16);
+  --bad-soft: rgba(226, 54, 69, 0.16);
+  color-scheme: dark;
+}
+
 html.light {
   --bg-primary: #ffffff;
-  --bg-secondary: #f4f6f8;
-  --bg-tertiary: #eef1f4;
-  --ink-primary: #1a2330;
-  --ink-secondary: #5b6573;
-  --ink-tertiary: #8a95a3;
-  --line: #e6eaef;
-  --line-strong: #d4dae1;
+  --bg-secondary: #f1f5f7;
+  --bg-tertiary: #e9eef1;
+  --ink-primary: #0c1f2b;
+  --ink-secondary: #3a4d57;
+  --ink-tertiary: #6b7f89;
+  --line: #dfe6ea;
+  --line-strong: #c4cfd4;
+
+  --brand-soft: rgba(0, 100, 143, 0.12);
+  --good-soft: rgba(32, 182, 145, 0.14);
+  --warn-soft: rgba(246, 168, 35, 0.16);
+  --bad-soft: rgba(226, 54, 69, 0.12);
   color-scheme: light;
 }
 
-html.dark {
-  --bg-primary: #11161d;
-  --bg-secondary: #161c25;
-  --bg-tertiary: #0d1218;
-  --ink-primary: #e9edf2;
-  --ink-secondary: #9aa6b4;
-  --ink-tertiary: #6b7682;
-  --line: #232c38;
-  --line-strong: #2e3949;
-  color-scheme: dark;
+/* Sidebar — tokens fixos (navy) independentes do tema. */
+:root {
+  --sidebar-bg: #011523;
+  --sidebar-fg: #c4cfd4;
+  --sidebar-active: #fafafa;
+  --sidebar-accent: #0e2939;
+  --sidebar-border: #1d2d35;
 }
 
 * {
@@ -62,7 +87,6 @@ body {
   }
 }
 
-/* recharts: inherit theme colors for axis/legend text */
 .recharts-text,
 .recharts-cartesian-axis-tick-value {
   fill: var(--ink-tertiary);

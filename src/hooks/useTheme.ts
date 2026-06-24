@@ -7,7 +7,8 @@ const KEY = 'consej_dossie_theme'
 function initialTheme(): Theme {
   const stored = localStorage.getItem(KEY)
   if (stored === 'light' || stored === 'dark') return stored
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  // Padrão: escuro (igual ao site de referência).
+  return 'dark'
 }
 
 export function useTheme() {

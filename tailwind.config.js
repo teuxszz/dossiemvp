@@ -19,14 +19,23 @@ export default {
           DEFAULT: 'var(--line)',
           strong: 'var(--line-strong)',
         },
-        brand: {
-          DEFAULT: '#185FA5',
-          dark: '#0C447C',
-          soft: '#E6F1FB',
+        // Sidebar — sempre escura (navy), igual ao site de referência.
+        sidebar: {
+          DEFAULT: 'var(--sidebar-bg)',
+          fg: 'var(--sidebar-fg)',
+          active: 'var(--sidebar-active)',
+          accent: 'var(--sidebar-accent)',
+          border: 'var(--sidebar-border)',
         },
-        good: { DEFAULT: '#3B6D11', bar: '#639922', soft: '#EAF3DE' },
-        warn: { DEFAULT: '#BA7517', deep: '#854F0B', soft: '#FAEEDA' },
-        bad: { DEFAULT: '#A32D2D', bar: '#E24B4A', soft: '#FCEBEB' },
+        // Paleta do site de referência (CONSEJ — Módulo Financeiro).
+        brand: {
+          DEFAULT: '#008bad', // accent ciano
+          dark: '#00648f', // primary
+          soft: 'var(--brand-soft)',
+        },
+        good: { DEFAULT: '#20b691', bar: '#20b691', soft: 'var(--good-soft)' },
+        warn: { DEFAULT: '#f6a823', deep: '#f6a823', soft: 'var(--warn-soft)' },
+        bad: { DEFAULT: '#e23645', bar: '#e23645', soft: 'var(--bad-soft)' },
       },
       borderRadius: {
         md: '8px',
@@ -37,8 +46,8 @@ export default {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       boxShadow: {
-        card: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)',
-        pop: '0 8px 24px rgba(16,24,40,0.12)',
+        card: '0 1px 2px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.22)',
+        pop: '0 8px 24px rgba(0,0,0,0.35)',
       },
     },
   },

@@ -28,7 +28,8 @@ export interface EventoTimeline {
 }
 
 export interface KpiCiclo {
-  ciclo: string // "2022"
+  ano: number // 2025
+  ciclo: string // "C1".."C4" — 4 ciclos por ano
   engajamento: number
   pco: number
   pdaa: number
@@ -63,12 +64,25 @@ export interface Feedback {
   tags: { label: string; tone: StatusNivel | 'info' }[]
 }
 
-export interface DadosPessoais {
-  admissao: string
-  regime: string
-  formacao: string
-  gestor: string
-  faixaSalarial: string
+export interface PassagemDiretoria {
+  diretoria: string
+  periodo: string
+}
+
+// Perfil do membro (substitui dados de RH como salário/regime/formação).
+export interface Perfil {
+  dataEntrada: string
+  nascimento: string
+  celular: string
+  email: string
+  diretoriaAtual: string
+  coordenadoriaAtual: string
+  diretoriasAnteriores: PassagemDiretoria[]
+  curso: string
+  periodoCurso: string
+  perfilComportamental: string
+  arquetipo: string
+  interesses: string[]
 }
 
 export interface AcessoAuditoria {
@@ -105,7 +119,7 @@ export interface Dossie {
   kpisPorCiclo: KpiCiclo[]
   competencias: Competencia[]
   tendenciaScore: ScorePonto[]
-  dadosPessoais: DadosPessoais
+  perfil: Perfil
   pdi: ItemPdi[]
   feedbacks: Feedback[]
   auditoria: AcessoAuditoria[]

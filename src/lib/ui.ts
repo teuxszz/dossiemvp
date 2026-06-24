@@ -29,9 +29,10 @@ export const toneDot: Record<Tone, string> = {
 }
 
 // Cor "crua" (hex) — usada em SVG/recharts onde Tailwind não alcança.
+// Paleta do site de referência (navy/ciano).
 export const toneHex: Record<Tone, string> = {
-  good: '#639922',
-  warn: '#BA7517',
-  bad: '#E24B4A',
-  info: '#185FA5',
+  good: '#20b691',
+  warn: '#f6a823',
+  bad: '#e23645',
+  info: '#008bad',
 }

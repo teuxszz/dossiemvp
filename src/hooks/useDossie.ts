@@ -29,7 +29,21 @@ interface ColaboradorRow {
 }
 
 function rowToDossie(row: ColaboradorRow): Dossie {
+  const { colaborador: _mockColab, ...mockRest } = MOCK_DOSSIE
+  // Mescla o mock como fallback: campos ausentes no `dados` do banco caem no
+  // exemplo (evita quebrar a UI se o registro ainda não tiver o novo formato).
+  const merged = { ...mockRest, ...row.dados }
+
+  // Se o banco ainda tiver kpisPorCiclo no formato antigo (sem `ano`), usa o
+  // mock — assim o seletor de ano do Dashboard nunca fica inválido.
+  const ciclosOk =
+    Array.isArray(merged.kpisPorCiclo) &&
+    merged.kpisPorCiclo.length > 0 &&
+    merged.kpisPorCiclo.every((c) => typeof c.ano === 'number')
+  if (!ciclosOk) merged.kpisPorCiclo = mockRest.kpisPorCiclo
+
   return {
+    ...merged,
     colaborador: {
       id: row.id,
       nome: row.nome,
@@ -40,7 +54,6 @@ function rowToDossie(row: ColaboradorRow): Dossie {
       acessoRestrito: row.acesso_restrito,
       ssoMfa: row.sso_mfa,
     },
-    ...row.dados,
   }
 }
 
