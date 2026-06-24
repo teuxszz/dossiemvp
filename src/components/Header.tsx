@@ -2,6 +2,7 @@ import { Lock, ShieldCheck, Download, Sparkles, Sun, Moon, ChevronDown, Database
 import { cn } from '@/lib/ui'
 import type { Colaborador } from '@/lib/types'
 import type { DataSource } from '@/hooks/useDossie'
+import { FarolBadge } from './Farol'
 
 interface Props {
   colaborador: Colaborador
@@ -11,9 +12,10 @@ interface Props {
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   source: DataSource
+  pontosPdaa: number
 }
 
-export function Header({ colaborador, colaboradores, selectedId, onSelect, theme, onToggleTheme, source }: Props) {
+export function Header({ colaborador, colaboradores, selectedId, onSelect, theme, onToggleTheme, source, pontosPdaa }: Props) {
   const multiplos = colaboradores.length > 1
 
   return (
@@ -62,6 +64,9 @@ export function Header({ colaborador, colaboradores, selectedId, onSelect, theme
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          <span className="hidden sm:inline-flex">
+            <FarolBadge pontos={pontosPdaa} />
+          </span>
           <span
             className={cn(
               'hidden items-center gap-1 rounded-md border px-2 py-1 text-[11px] sm:inline-flex',

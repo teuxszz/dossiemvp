@@ -2,6 +2,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Line,
   LineChart,
@@ -10,12 +11,15 @@ import {
   PolarRadiusAxis,
   Radar,
   RadarChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
-import type { Competencia, KpiCiclo, ScorePonto } from '@/lib/types'
+import type { AbonoCiclo, Competencia, KpiCiclo, PontuacaoCiclo, ScorePonto } from '@/lib/types'
+import { farolDe } from '@/lib/pdaa'
+import { toneHex } from '@/lib/ui'
 
 const GRID = 'var(--line)'
 const AXIS = { fontSize: 11, fill: 'var(--ink-tertiary)' }
@@ -31,8 +35,7 @@ const tooltipStyle = {
 const KPI_SERIES = [
   { key: 'engajamento', label: 'Engajamento', color: '#008bad' },
   { key: 'pco', label: 'PCO', color: '#f6a823' },
-  { key: 'pdaa', label: 'PDAA', color: '#20b691' },
-  { key: 'entregas', label: 'Entregas', color: '#00648f' },
+  { key: 'entregas', label: 'Entregas', color: '#20b691' },
 ] as const
 
 // Barras de KPIs por ciclo (C1–C4) de UM ano selecionado.
@@ -86,6 +89,47 @@ export function TendenciaScore({ data }: { data: ScorePonto[] }) {
           activeDot={{ r: 5 }}
         />
       </LineChart>
+    </ResponsiveContainer>
+  )
+}
+
+// Pontuação PDAA por ciclo (C1–C4) — cada barra colorida pelo farol (azul/amarelo/vermelho).
+export function PontuacaoPorCicloChart({ data }: { data: PontuacaoCiclo[] }) {
+  const ordenado = [...data].sort((a, b) => a.ciclo.localeCompare(b.ciclo))
+  const max = Math.max(16, ...ordenado.map((d) => d.pontos))
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={ordenado} margin={{ top: 8, right: 8, left: -16, bottom: 0 }} barCategoryGap="28%">
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
+        <XAxis dataKey="ciclo" tick={AXIS} axisLine={false} tickLine={false} />
+        <YAxis domain={[0, max]} tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
+        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--bg-secondary)' }} formatter={(v) => [`${v} pts`, 'Pontuação']} />
+        {/* Limiares do farol */}
+        <ReferenceLine y={7} stroke="#f6a823" strokeDasharray="4 4" />
+        <ReferenceLine y={13} stroke="#e23645" strokeDasharray="4 4" />
+        <Bar dataKey="pontos" radius={[3, 3, 0, 0]}>
+          {ordenado.map((d) => (
+            <Cell key={`${d.ano}-${d.ciclo}`} fill={toneHex[farolDe(d.pontos).tone]} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
+// Abonos usados por ciclo (C1–C4).
+export function AbonosPorCicloChart({ data }: { data: AbonoCiclo[] }) {
+  const ordenado = [...data].sort((a, b) => a.ciclo.localeCompare(b.ciclo))
+  const max = Math.max(3, ...ordenado.map((d) => d.usados))
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={ordenado} margin={{ top: 8, right: 8, left: -16, bottom: 0 }} barCategoryGap="32%">
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
+        <XAxis dataKey="ciclo" tick={AXIS} axisLine={false} tickLine={false} />
+        <YAxis domain={[0, max]} tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
+        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--bg-secondary)' }} formatter={(v) => [`${v} abono(s)`, 'Usados']} />
+        <Bar dataKey="usados" fill="#20b691" radius={[3, 3, 0, 0]} />
+      </BarChart>
     </ResponsiveContainer>
   )
 }

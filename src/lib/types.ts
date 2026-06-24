@@ -111,6 +111,48 @@ export interface Colaborador {
   ssoMfa: boolean
 }
 
+// ---- PDAA (Plano de Avaliação e Autogestão · sistema de pontos / farol) ----
+
+export type CategoriaConduta = 'leve' | 'moderada' | 'alerta' | 'grave'
+
+// Catálogo (vem do PDF). Leve=1, Moderada=2, Alerta=3, Grave=4.
+export interface Conduta {
+  id: string
+  categoria: CategoriaConduta
+  pontos: number
+  descricao: string
+}
+
+// Uma conduta registrada (instância) — soma para a pontuação do ciclo.
+export interface RegistroConduta {
+  id: string // id da instância (único)
+  condutaId: string
+  categoria: CategoriaConduta
+  pontos: number
+  descricao: string
+}
+
+export interface PontuacaoCiclo {
+  ano: number
+  ciclo: string // C1..C4
+  pontos: number
+}
+
+export interface AbonoCiclo {
+  ano: number
+  ciclo: string
+  usados: number
+}
+
+export interface Pdaa {
+  cicloAtual: { ano: number; ciclo: string }
+  pontuacaoPorCiclo: PontuacaoCiclo[]
+  abonosPorCiclo: AbonoCiclo[]
+  abonosDisponiveis: number
+  estagioProbatorioUsado: boolean
+  condutasRegistradas: RegistroConduta[]
+}
+
 export interface Dossie {
   colaborador: Colaborador
   kpis: Kpi[]
@@ -124,4 +166,5 @@ export interface Dossie {
   feedbacks: Feedback[]
   auditoria: AcessoAuditoria[]
   perfisAcesso: PerfilAcesso[]
+  pdaa: Pdaa
 }

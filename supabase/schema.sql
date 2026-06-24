@@ -62,7 +62,6 @@ values (
   "kpis": [
     { "key": "engajamento", "label": "Engajamento", "value": 87, "status": "good", "sub": "Alto · +5pp vs ciclo anterior" },
     { "key": "pco", "label": "PCO", "value": 73, "status": "warn", "sub": "Moderado · Meta: 80%" },
-    { "key": "pdaa", "label": "PDAA", "value": 91, "status": "good", "sub": "Destaque · Top 10%" },
     { "key": "entregas", "label": "Entregas", "value": 94, "status": "good", "sub": "Excelente · 17/18 on-time" },
     { "key": "presenca", "label": "Presença", "value": 96, "status": "good", "sub": "Pontualidade: 98%" }
   ],
@@ -151,7 +150,46 @@ values (
     { "id": "pa3", "nome": "Diretoria de Operações", "permissao": "Leitura — KPIs e recomendações", "tone": "info" },
     { "id": "pa4", "nome": "Conselho", "permissao": "Somente log de auditoria", "tone": "warn" },
     { "id": "pa5", "nome": "Carlos E. Menezes (titular)", "permissao": "Visualização parcial — sem histórico disciplinar", "tone": "warn" }
-  ]
+  ],
+  "pdaa": {
+    "cicloAtual": { "ano": 2026, "ciclo": "C2" },
+    "pontuacaoPorCiclo": [
+      { "ano": 2024, "ciclo": "C1", "pontos": 4 },
+      { "ano": 2024, "ciclo": "C2", "pontos": 6 },
+      { "ano": 2024, "ciclo": "C3", "pontos": 9 },
+      { "ano": 2024, "ciclo": "C4", "pontos": 5 },
+      { "ano": 2025, "ciclo": "C1", "pontos": 3 },
+      { "ano": 2025, "ciclo": "C2", "pontos": 7 },
+      { "ano": 2025, "ciclo": "C3", "pontos": 5 },
+      { "ano": 2025, "ciclo": "C4", "pontos": 2 },
+      { "ano": 2026, "ciclo": "C1", "pontos": 6 },
+      { "ano": 2026, "ciclo": "C2", "pontos": 8 },
+      { "ano": 2026, "ciclo": "C3", "pontos": 0 },
+      { "ano": 2026, "ciclo": "C4", "pontos": 0 }
+    ],
+    "abonosPorCiclo": [
+      { "ano": 2024, "ciclo": "C1", "usados": 1 },
+      { "ano": 2024, "ciclo": "C2", "usados": 2 },
+      { "ano": 2024, "ciclo": "C3", "usados": 1 },
+      { "ano": 2024, "ciclo": "C4", "usados": 0 },
+      { "ano": 2025, "ciclo": "C1", "usados": 2 },
+      { "ano": 2025, "ciclo": "C2", "usados": 1 },
+      { "ano": 2025, "ciclo": "C3", "usados": 3 },
+      { "ano": 2025, "ciclo": "C4", "usados": 1 },
+      { "ano": 2026, "ciclo": "C1", "usados": 1 },
+      { "ano": 2026, "ciclo": "C2", "usados": 2 },
+      { "ano": 2026, "ciclo": "C3", "usados": 0 },
+      { "ano": 2026, "ciclo": "C4", "usados": 0 }
+    ],
+    "abonosDisponiveis": 5,
+    "estagioProbatorioUsado": false,
+    "condutasRegistradas": [
+      { "id": "rc1", "condutaId": "m1", "categoria": "moderada", "pontos": 2, "descricao": "Faltar (sem justificativa idônea) a RG, RT, 1:1 ou momento CONSEJ" },
+      { "id": "rc2", "condutaId": "m5", "categoria": "moderada", "pontos": 2, "descricao": "Passar mais de 2 dias sem interagir em GT ativo" },
+      { "id": "rc3", "condutaId": "a5", "categoria": "alerta", "pontos": 3, "descricao": "Atrasar envio de follow-up (conteúdos de valor)" },
+      { "id": "rc4", "condutaId": "l2", "categoria": "leve", "pontos": 1, "descricao": "Atrasar ou deixar de responder formulários de pesquisas internas no prazo" }
+    ]
+  }
 }
 $json$::jsonb
 )
