@@ -18,9 +18,20 @@ export interface Recomendacao {
   descricao: string
 }
 
+export type TipoEvento =
+  | 'ingresso'
+  | 'treinamento'
+  | 'cargo'
+  | 'meta'
+  | 'avaliacao'
+  | 'feedback_formal'
+  | 'advertencia'
+  | 'outro'
+
 export interface EventoTimeline {
   id: string
   tipo: 'good' | 'warn' | 'bad' | 'info'
+  tipoEvento?: TipoEvento
   titulo: string
   meta: string
   data: string // ex.: "Mar 2024"
@@ -59,9 +70,18 @@ export interface Feedback {
   autor: string
   papel: string
   data: string
+  ciclo?: string   // "C1".."C4"
+  ano?: number
   texto: string
   categorias: CategoriaFeedback[]
   tags: { label: string; tone: StatusNivel | 'info' }[]
+}
+
+export interface AvaliacaoDesenvolvimento {
+  pontosDesenvolvimento: string[]  // o que o membro quer desenvolver
+  percepcaoGestores: string[]      // o que gestores veem para melhorar
+  pontosFortes: string[]           // pontos fortes das 1:1
+  pontosFracos: string[]           // pontos fracos das 1:1
 }
 
 export interface PassagemDiretoria {
@@ -130,6 +150,8 @@ export interface RegistroConduta {
   categoria: CategoriaConduta
   pontos: number
   descricao: string
+  data?: string       // ex.: "2026-06-15" — data em que a conduta ocorreu
+  observacao?: string // contexto livre adicionado pelo coordenador
 }
 
 export interface PontuacaoCiclo {
@@ -138,10 +160,25 @@ export interface PontuacaoCiclo {
   pontos: number
 }
 
+export interface UsoAbono {
+  id: string
+  tipo: string
+  descricao?: string
+  data: string
+  pontosAbonados: number
+}
+
 export interface AbonoCiclo {
   ano: number
   ciclo: string
   usados: number
+  registros?: UsoAbono[]
+}
+
+export interface CondutasCicloHistorico {
+  ano: number
+  ciclo: string
+  registros: RegistroConduta[]
 }
 
 export interface Pdaa {
@@ -151,6 +188,55 @@ export interface Pdaa {
   abonosDisponiveis: number
   estagioProbatorioUsado: boolean
   condutasRegistradas: RegistroConduta[]
+  condutasPorCiclo?: CondutasCicloHistorico[]
+}
+
+// Configuração de fechamento de ciclo — gerenciada pelo G&G (global, salva em localStorage).
+export interface ConfigCiclo {
+  cicloRef: string      // ex.: "2026-C2"
+  dataFechamento: string // ISO date "YYYY-MM-DD"
+}
+
+// Snapshot salvo ao fechar um ciclo — dados mínimos para comparação histórica.
+export interface SnapshotCiclo {
+  ano: number
+  ciclo: string
+  fechadoEm: string // ISO datetime
+  pontuacaoPdaa: number
+  farolNivel: string
+  kpis: {
+    engajamento: number
+    pco: number
+    entregas: number
+    presenca: number
+  }
+}
+
+// ---- Entregas por GT ----
+
+export type StatusEntrega = 'no_prazo' | 'fora_prazo' | 'pendente'
+
+export interface EntregaGT {
+  id: string
+  descricao: string
+  prazo: string       // ex.: "15/04/2026"
+  status: StatusEntrega
+}
+
+export interface GrupoTrabalho {
+  id: string
+  nome: string        // ex.: "GT Comercial"
+  diretoria?: string  // ex.: "Diretoria de Demandas"
+  ciclo: string       // ex.: "C2"
+  ano: number
+  entregas: EntregaGT[]
+}
+
+// GTs dos quais o membro participa por ciclo (usado em Perfil)
+export interface ParticipacaoGT {
+  ciclo: string
+  ano: number
+  gts: string[]       // nomes dos GTs
 }
 
 export interface Dossie {
@@ -164,7 +250,10 @@ export interface Dossie {
   perfil: Perfil
   pdi: ItemPdi[]
   feedbacks: Feedback[]
+  avaliacaoDesenvolvimento: AvaliacaoDesenvolvimento
   auditoria: AcessoAuditoria[]
   perfisAcesso: PerfilAcesso[]
   pdaa: Pdaa
+  gruposTrabalho: GrupoTrabalho[]
+  participacaoGTs: ParticipacaoGT[]
 }

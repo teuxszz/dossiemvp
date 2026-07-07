@@ -51,6 +51,23 @@ export const CONDUTAS: Conduta[] = [
   { id: 'g5', categoria: 'grave', pontos: 4, descricao: 'Faltar (sem justificativa idônea) a reunião com cliente/lead, CF ou AG' },
 ]
 
+// Catálogo de abonos — situações que permitem cancelar pontos do PDAA.
+export interface TipoAbono {
+  id: string
+  tipo: string
+  descricao: string
+  pontosMaximos: number // máx. que essa ação pode cancelar
+}
+
+export const ABONOS_CATALOGO: TipoAbono[] = [
+  { id: 'ab1', tipo: 'Ação beneficente / voluntariado', descricao: 'Participação comprovada em ação social ou voluntariado em nome da CONSEJ.', pontosMaximos: 3 },
+  { id: 'ab2', tipo: 'Destaque em entrega de projeto', descricao: 'Entrega de projeto com qualidade acima do esperado, reconhecida pela diretoria.', pontosMaximos: 2 },
+  { id: 'ab3', tipo: 'Indicação de novo membro aprovado', descricao: 'Indicação de candidato que ingressou e passou pelo período probatório.', pontosMaximos: 2 },
+  { id: 'ab4', tipo: 'Contribuição em treinamento interno', descricao: 'Facilitação ou organização de treinamento/capacitação para o time.', pontosMaximos: 2 },
+  { id: 'ab5', tipo: 'Representação externa da CONSEJ', descricao: 'Participação em evento, concurso ou rede de EJs como representante.', pontosMaximos: 3 },
+  { id: 'ab6', tipo: 'Destaque em processo seletivo', descricao: 'Atuação exemplar na organização ou condução do processo seletivo.', pontosMaximos: 1 },
+]
+
 // Limites do Sistema de Farol (PDF).
 export const LIMITE_AMARELO = 7 // 7 a 12
 export const LIMITE_VERMELHO = 13 // >= 13
@@ -99,6 +116,19 @@ export function farolDe(pontos: number): Farol {
     descricao: 'Situação regular · sem acompanhamento especial',
     probatorio: false,
   }
+}
+
+// Remove ciclos que ainda não ocorreram (posteriores ao cicloAtual).
+export function filtrarCiclosFuturos<T extends { ano: number; ciclo: string }>(
+  lista: T[],
+  cicloAtual: { ano: number; ciclo: string },
+): T[] {
+  const refNum = parseInt(cicloAtual.ciclo.replace('C', ''))
+  return lista.filter((item) => {
+    if (item.ano < cicloAtual.ano) return true
+    if (item.ano > cicloAtual.ano) return false
+    return parseInt(item.ciclo.replace('C', '')) <= refNum
+  })
 }
 
 // Substitui a pontuação do ciclo atual pelo valor "ao vivo" (somatório das

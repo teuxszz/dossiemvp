@@ -39,13 +39,36 @@ const KPI_SERIES = [
 ] as const
 
 // Barras de KPIs por ciclo (C1–C4) de UM ano selecionado.
-export function KpisPorCicloChart({ data }: { data: KpiCiclo[] }) {
+// cicloAtual: destaca o ciclo em aberto no eixo X.
+export function KpisPorCicloChart({ data, cicloAtual }: { data: KpiCiclo[]; cicloAtual?: string }) {
   const ordenado = [...data].sort((a, b) => a.ciclo.localeCompare(b.ciclo))
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={ordenado} margin={{ top: 8, right: 8, left: -16, bottom: 0 }} barGap={2} barCategoryGap="22%">
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
-        <XAxis dataKey="ciclo" tick={AXIS} axisLine={false} tickLine={false} />
+        <XAxis
+          dataKey="ciclo"
+          tick={(props) => {
+            const val = String(props.payload?.value ?? '')
+            const isAtual = !!cicloAtual && val === cicloAtual
+            const tx = props.x as number
+            const ty = (props.y as number) + 12
+            return (
+              <text
+                x={tx}
+                y={ty}
+                textAnchor="middle"
+                fontSize={11}
+                fill={isAtual ? 'var(--ink-primary)' : 'var(--ink-tertiary)'}
+                fontWeight={isAtual ? 600 : 400}
+              >
+                {isAtual ? `${val} ●` : val}
+              </text>
+            )
+          }}
+          axisLine={false}
+          tickLine={false}
+        />
         <YAxis domain={[0, 100]} tick={AXIS} axisLine={false} tickLine={false} />
         <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--bg-secondary)' }} />
         <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -94,22 +117,55 @@ export function TendenciaScore({ data }: { data: ScorePonto[] }) {
 }
 
 // Pontuação PDAA por ciclo (C1–C4) — cada barra colorida pelo farol (azul/amarelo/vermelho).
-export function PontuacaoPorCicloChart({ data }: { data: PontuacaoCiclo[] }) {
+// cicloAtual: destaca o ciclo em aberto com borda tracejada.
+export function PontuacaoPorCicloChart({ data, cicloAtual }: { data: PontuacaoCiclo[]; cicloAtual?: string }) {
   const ordenado = [...data].sort((a, b) => a.ciclo.localeCompare(b.ciclo))
   const max = Math.max(16, ...ordenado.map((d) => d.pontos))
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={ordenado} margin={{ top: 8, right: 8, left: -16, bottom: 0 }} barCategoryGap="28%">
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
-        <XAxis dataKey="ciclo" tick={AXIS} axisLine={false} tickLine={false} />
+        <XAxis
+          dataKey="ciclo"
+          tick={(props) => {
+            const val = String(props.payload?.value ?? '')
+            const isAtual = !!cicloAtual && val === cicloAtual
+            const tx = props.x as number
+            const ty = (props.y as number) + 12
+            return (
+              <text
+                x={tx}
+                y={ty}
+                textAnchor="middle"
+                fontSize={11}
+                fill={isAtual ? 'var(--ink-primary)' : 'var(--ink-tertiary)'}
+                fontWeight={isAtual ? 600 : 400}
+              >
+                {isAtual ? `${val} ●` : val}
+              </text>
+            )
+          }}
+          axisLine={false}
+          tickLine={false}
+        />
         <YAxis domain={[0, max]} tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--bg-secondary)' }} formatter={(v) => [`${v} pts`, 'Pontuação']} />
-        {/* Limiares do farol */}
+        <Tooltip
+          contentStyle={tooltipStyle}
+          cursor={{ fill: 'var(--bg-secondary)' }}
+          formatter={(v, _name, props) => {
+            const isAtual = cicloAtual && props.payload?.ciclo === cicloAtual
+            return [`${v} pts${isAtual ? ' (em aberto)' : ''}`, 'Pontuação']
+          }}
+        />
         <ReferenceLine y={7} stroke="#f6a823" strokeDasharray="4 4" />
         <ReferenceLine y={13} stroke="#e23645" strokeDasharray="4 4" />
         <Bar dataKey="pontos" radius={[3, 3, 0, 0]}>
           {ordenado.map((d) => (
-            <Cell key={`${d.ano}-${d.ciclo}`} fill={toneHex[farolDe(d.pontos).tone]} />
+            <Cell
+              key={`${d.ano}-${d.ciclo}`}
+              fill={toneHex[farolDe(d.pontos).tone]}
+              opacity={cicloAtual && d.ciclo === cicloAtual ? 0.75 : 1}
+            />
           ))}
         </Bar>
       </BarChart>

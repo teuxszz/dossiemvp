@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { MOCK_DOSSIE } from '@/lib/mockData'
+import { MOCK_MEMBROS, criarDossieBase } from '@/lib/mockData'
 import type { Colaborador, Dossie } from '@/lib/types'
 
 export type DataSource = 'supabase' | 'mock'
 
 interface UseDossieResult {
   dossie: Dossie | null
-  colaboradores: Pick<Colaborador, 'id' | 'nome' | 'cargo' | 'iniciais'>[]
+  membros: Pick<Colaborador, 'id' | 'nome' | 'cargo' | 'area' | 'iniciais'>[]
+  allDossies: Dossie[] // todos os dossiês (mock mode apenas)
   selectedId: string | null
-  setSelectedId: (id: string) => void
+  setSelectedId: (id: string | null) => void
+  addMembro: (colab: Colaborador) => void
+  removeMembro: (id: string) => void
   loading: boolean
   error: string | null
   source: DataSource
@@ -28,14 +31,10 @@ interface ColaboradorRow {
   dados: Omit<Dossie, 'colaborador'>
 }
 
+const [mockDossie0] = MOCK_MEMBROS
 function rowToDossie(row: ColaboradorRow): Dossie {
-  const { colaborador: _mockColab, ...mockRest } = MOCK_DOSSIE
-  // Mescla o mock como fallback: campos ausentes no `dados` do banco caem no
-  // exemplo (evita quebrar a UI se o registro ainda não tiver o novo formato).
+  const { colaborador: _mockColab, ...mockRest } = mockDossie0
   const merged = { ...mockRest, ...row.dados }
-
-  // Se o banco ainda tiver kpisPorCiclo no formato antigo (sem `ano`), usa o
-  // mock — assim o seletor de ano do Dashboard nunca fica inválido.
   const ciclosOk =
     Array.isArray(merged.kpisPorCiclo) &&
     merged.kpisPorCiclo.length > 0 &&
@@ -57,87 +56,107 @@ function rowToDossie(row: ColaboradorRow): Dossie {
   }
 }
 
+const LS_EXTRAS = 'dossie_membros_extras'
+
+function loadExtras(): Dossie[] {
+  try { return JSON.parse(localStorage.getItem(LS_EXTRAS) ?? '[]') } catch { return [] }
+}
+function saveExtras(extras: Dossie[]) {
+  localStorage.setItem(LS_EXTRAS, JSON.stringify(extras))
+}
+
 const source: DataSource = isSupabaseConfigured ? 'supabase' : 'mock'
 
 export function useDossie(): UseDossieResult {
-  const [colaboradores, setColaboradores] = useState<UseDossieResult['colaboradores']>([])
+  // Mock extras (membros criados pelo coordenador)
+  const [extras, setExtras] = useState<Dossie[]>(loadExtras)
+
+  const allMock: Dossie[] = [...MOCK_MEMBROS, ...extras]
+
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [dossie, setDossie] = useState<Dossie | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [supabaseMembros, setSupabaseMembros] = useState<UseDossieResult['membros']>([])
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 1. Carrega a lista de colaboradores (para o seletor).
+  const mockMembros = allMock.map((d) => ({
+    id: d.colaborador.id,
+    nome: d.colaborador.nome,
+    cargo: d.colaborador.cargo,
+    area: d.colaborador.area,
+    iniciais: d.colaborador.iniciais,
+  }))
+
+  // Lista de membros exposta para a HomeView — sempre inclui mock + extras
+  const membros: UseDossieResult['membros'] = isSupabaseConfigured
+    ? [...mockMembros, ...supabaseMembros.filter((s) => !allMock.some((m) => m.colaborador.id === s.id))]
+    : mockMembros
+
+  // Carrega lista do Supabase (só quando configurado)
   useEffect(() => {
+    if (!supabase) return
     let active = true
-
-    async function loadList() {
-      if (!supabase) {
-        const c = MOCK_DOSSIE.colaborador
-        setColaboradores([{ id: c.id, nome: c.nome, cargo: c.cargo, iniciais: c.iniciais }])
-        setSelectedId(c.id)
-        return
-      }
-      const { data, error: err } = await supabase
-        .from('colaboradores')
-        .select('id, nome, cargo, iniciais')
-        .order('nome', { ascending: true })
-
-      if (!active) return
-      if (err) {
-        setError(err.message)
-        setLoading(false)
-        return
-      }
-      const list = (data ?? []) as UseDossieResult['colaboradores']
-      setColaboradores(list)
-      setSelectedId((prev) => prev ?? list[0]?.id ?? null)
-      if (list.length === 0) setLoading(false)
-    }
-
-    loadList()
-    return () => {
-      active = false
-    }
+    supabase
+      .from('colaboradores')
+      .select('id, nome, cargo, area, iniciais')
+      .order('nome', { ascending: true })
+      .then(({ data, error: err }) => {
+        if (!active) return
+        if (err) { setError(err.message); return }
+        setSupabaseMembros((data ?? []) as UseDossieResult['membros'])
+      })
+    return () => { active = false }
   }, [])
 
-  // 2. Carrega o dossiê do colaborador selecionado.
+  // Carrega o dossiê quando selectedId ou extras mudam
   useEffect(() => {
-    let active = true
-    if (!selectedId) return
+    if (!selectedId) { setDossie(null); return }
 
-    async function loadOne() {
-      setLoading(true)
-      setError(null)
+    setLoading(true)
+    setError(null)
 
-      if (!supabase) {
-        if (active) {
-          setDossie(MOCK_DOSSIE)
-          setLoading(false)
-        }
-        return
-      }
-
-      const { data, error: err } = await supabase
-        .from('colaboradores')
-        .select('*')
-        .eq('id', selectedId)
-        .single()
-
-      if (!active) return
-      if (err) {
-        setError(err.message)
-        setLoading(false)
-        return
-      }
-      setDossie(rowToDossie(data as ColaboradorRow))
+    // Sempre tenta local primeiro (mock + extras criados pelo coordenador)
+    const all = [...MOCK_MEMBROS, ...extras]
+    const local = all.find((d) => d.colaborador.id === selectedId) ?? null
+    if (local || !supabase) {
+      setDossie(local)
       setLoading(false)
+      return
     }
 
-    loadOne()
-    return () => {
-      active = false
-    }
-  }, [selectedId])
+    // Só vai ao Supabase se o id não existe localmente
+    let active = true
+    supabase
+      .from('colaboradores')
+      .select('*')
+      .eq('id', selectedId)
+      .single()
+      .then(({ data, error: err }) => {
+        if (!active) return
+        if (err) { setError(err.message); setLoading(false); return }
+        setDossie(rowToDossie(data as ColaboradorRow))
+        setLoading(false)
+      })
 
-  return { dossie, colaboradores, selectedId, setSelectedId, loading, error, source }
+    return () => { active = false }
+  }, [selectedId, extras])
+
+  function addMembro(colab: Colaborador) {
+    const novo = criarDossieBase(colab)
+    const updated = [...extras, novo]
+    setExtras(updated)
+    saveExtras(updated)
+    setSelectedId(colab.id)
+  }
+
+  function removeMembro(id: string) {
+    // Membros mock fixos não podem ser removidos
+    const isMock = MOCK_MEMBROS.some((d) => d.colaborador.id === id)
+    if (isMock) return
+    const updated = extras.filter((d) => d.colaborador.id !== id)
+    setExtras(updated)
+    saveExtras(updated)
+  }
+
+  return { dossie, membros, allDossies: allMock, selectedId, setSelectedId, addMembro, removeMembro, loading, error, source }
 }

@@ -1,0 +1,283 @@
+import { useMemo } from 'react'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, Legend,
+} from 'recharts'
+import { ShieldAlert, Users, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Card, SectionTitle } from './Card'
+import { farolDe } from '@/lib/pdaa'
+import { cn, toneBadge } from '@/lib/ui'
+import type { Dossie, KpiCiclo } from '@/lib/types'
+
+const CICLO_ATUAL = { ano: 2026, ciclo: 'C2' }
+
+const FAROL_CONFIG = {
+  azul:     { label: 'Farol Azul',     bg: 'bg-brand/10',  text: 'text-brand', border: 'border-brand/30' },
+  amarelo:  { label: 'Farol Amarelo',  bg: 'bg-warn/10',   text: 'text-warn',  border: 'border-warn/30'  },
+  vermelho: { label: 'Farol Vermelho', bg: 'bg-bad/10',    text: 'text-bad',   border: 'border-bad/30'   },
+}
+
+const BAR_COLORS = { azul: '#38bdf8', amarelo: '#f59e0b', vermelho: '#f43f5e' }
+
+interface MemberStat {
+  id: string
+  nome: string
+  iniciais: string
+  area: string
+  pontosPdaa: number
+  farolNivel: 'azul' | 'amarelo' | 'vermelho'
+  kpiAtual: { engajamento: number; pco: number; entregas: number; presenca: number } | null
+}
+
+function corIniciais(id: string) {
+  const opts = ['bg-brand/20 text-brand', 'bg-good/20 text-good', 'bg-warn/20 text-warn', 'bg-purple-500/20 text-purple-400', 'bg-cyan-500/20 text-cyan-400']
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return opts[h % opts.length]
+}
+
+function avg(nums: number[]) {
+  if (!nums.length) return 0
+  return Math.round(nums.reduce((s, n) => s + n, 0) / nums.length)
+}
+
+interface Props {
+  allDossies: Dossie[]
+  onSelectMembro: (id: string) => void
+}
+
+export function TeamDashboard({ allDossies, onSelectMembro }: Props) {
+  const stats: MemberStat[] = useMemo(() =>
+    allDossies.map((d) => {
+      const pontosPdaa = d.pdaa.condutasRegistradas.reduce((s, r) => s + r.pontos, 0)
+      const farol = farolDe(pontosPdaa)
+      const kpiRow = d.kpisPorCiclo.find(
+        (k) => k.ano === CICLO_ATUAL.ano && k.ciclo === CICLO_ATUAL.ciclo
+      )
+      return {
+        id: d.colaborador.id,
+        nome: d.colaborador.nome,
+        iniciais: d.colaborador.iniciais,
+        area: d.colaborador.area,
+        pontosPdaa,
+        farolNivel: farol.nivel,
+        kpiAtual: kpiRow
+          ? { engajamento: kpiRow.engajamento, pco: kpiRow.pco, entregas: kpiRow.entregas, presenca: (kpiRow as KpiCiclo & { presenca?: number }).presenca ?? 0 }
+          : null,
+      }
+    }),
+  [allDossies])
+
+  const total = stats.length
+  const porFarol = {
+    azul:     stats.filter((s) => s.farolNivel === 'azul').length,
+    amarelo:  stats.filter((s) => s.farolNivel === 'amarelo').length,
+    vermelho: stats.filter((s) => s.farolNivel === 'vermelho').length,
+  }
+  const emAtencao = stats.filter((s) => s.farolNivel !== 'azul').sort((a, b) => b.pontosPdaa - a.pontosPdaa)
+
+  const comKpi = stats.filter((s) => s.kpiAtual !== null)
+  const mediaKpi = {
+    engajamento: avg(comKpi.map((s) => s.kpiAtual!.engajamento)),
+    pco:         avg(comKpi.map((s) => s.kpiAtual!.pco)),
+    entregas:    avg(comKpi.map((s) => s.kpiAtual!.entregas)),
+    presenca:    avg(comKpi.map((s) => s.kpiAtual!.presenca)),
+  }
+
+  // Distribuição por diretoria
+  const porDiretoria = Object.entries(
+    stats.reduce<Record<string, { total: number; atencao: number }>>((acc, s) => {
+      if (!acc[s.area]) acc[s.area] = { total: 0, atencao: 0 }
+      acc[s.area].total++
+      if (s.farolNivel !== 'azul') acc[s.area].atencao++
+      return acc
+    }, {})
+  ).sort((a, b) => b[1].total - a[1].total)
+
+  // Dados para o gráfico de barras (PDAA por membro)
+  const chartData = [...stats]
+    .sort((a, b) => b.pontosPdaa - a.pontosPdaa)
+    .map((s) => ({
+      nome: s.nome.split(' ')[0],
+      nomeCompleto: s.nome,
+      pontos: s.pontosPdaa,
+      nivel: s.farolNivel,
+      id: s.id,
+    }))
+
+  const kpiChartData = comKpi.map((s) => ({
+    nome: s.nome.split(' ')[0],
+    Engajamento: s.kpiAtual!.engajamento,
+    PCO: s.kpiAtual!.pco,
+    Entregas: s.kpiAtual!.entregas,
+  }))
+
+  return (
+    <div className="space-y-4">
+      {/* KPIs médios */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: 'Engajamento médio', value: mediaKpi.engajamento, suffix: '%' },
+          { label: 'PCO médio',         value: mediaKpi.pco,         suffix: '%' },
+          { label: 'Entregas médias',   value: mediaKpi.entregas,     suffix: '%' },
+          { label: 'Presença média',    value: mediaKpi.presenca,     suffix: '%' },
+        ].map((k) => (
+          <Card key={k.label} className="p-4">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-ink-tertiary">{k.label}</div>
+            <div className="mt-1 text-3xl font-semibold text-brand">{k.value}{k.suffix}</div>
+            {comKpi.length < total && (
+              <div className="mt-1 text-[10px] text-ink-tertiary">{comKpi.length}/{total} com dados</div>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      {/* Farol do time + membros em atenção */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        {/* Distribuição farol */}
+        <Card className="p-4 sm:p-5">
+          <SectionTitle icon={<ShieldAlert size={15} />}>Farol do time</SectionTitle>
+          <div className="mt-3 space-y-2">
+            {(['azul', 'amarelo', 'vermelho'] as const).map((nivel) => {
+              const cfg = FAROL_CONFIG[nivel]
+              const n = porFarol[nivel]
+              const pct = total > 0 ? Math.round((n / total) * 100) : 0
+              return (
+                <div key={nivel}>
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span className={cn('font-medium', cfg.text)}>{cfg.label}</span>
+                    <span className="text-ink-secondary">{n} membro{n !== 1 ? 's' : ''} · {pct}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-bg-tertiary">
+                    <div
+                      className={cn('h-full rounded-full transition-all', cfg.bg.replace('/10', ''))}
+                      style={{ width: `${pct}%`, backgroundColor: BAR_COLORS[nivel] }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-4 border-t border-line pt-3 text-xs text-ink-tertiary">
+            {total} membros cadastrados · ciclo {CICLO_ATUAL.ano} {CICLO_ATUAL.ciclo}
+          </div>
+        </Card>
+
+        {/* Membros em atenção */}
+        <Card className="p-4 sm:p-5 lg:col-span-2">
+          <SectionTitle icon={<AlertTriangle size={15} />}>
+            Membros em atenção
+            {emAtencao.length > 0 && (
+              <span className={cn('ml-2 rounded-full px-2 py-0.5 text-[10px]', toneBadge.bad)}>
+                {emAtencao.length}
+              </span>
+            )}
+          </SectionTitle>
+          {emAtencao.length === 0 ? (
+            <p className="mt-4 text-center text-sm text-good">Nenhum membro em farol amarelo ou vermelho.</p>
+          ) : (
+            <div className="mt-2 divide-y divide-line">
+              {emAtencao.map((s) => {
+                const cfg = FAROL_CONFIG[s.farolNivel]
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => onSelectMembro(s.id)}
+                    className="flex w-full items-center gap-3 py-2.5 text-left hover:opacity-80"
+                  >
+                    <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[12px] font-bold', corIniciais(s.id))}>
+                      {s.iniciais}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-medium text-ink-primary">{s.nome}</p>
+                      <p className="truncate text-[10px] text-ink-tertiary">{s.area}</p>
+                    </div>
+                    <span className={cn('shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-medium', cfg.bg, cfg.text, cfg.border)}>
+                      {s.pontosPdaa} pts
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Gráfico PDAA por membro */}
+      <Card className="p-4 sm:p-5">
+        <SectionTitle icon={<ShieldAlert size={15} />}>Pontuação PDAA por membro — {CICLO_ATUAL.ano} {CICLO_ATUAL.ciclo}</SectionTitle>
+        <div className="mt-3 h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} barSize={28} onClick={(d) => { const id = (d as { activePayload?: Array<{ payload?: { id?: string } }> })?.activePayload?.[0]?.payload?.id; if (id) onSelectMembro(id) }}>
+              <XAxis dataKey="nome" tick={{ fontSize: 11, fill: 'var(--color-ink-secondary)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--color-ink-tertiary)' }} axisLine={false} tickLine={false} />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null
+                  const d = payload[0].payload
+                  const cfg = FAROL_CONFIG[d.nivel as keyof typeof FAROL_CONFIG]
+                  return (
+                    <div className="rounded-lg border border-line bg-bg-primary px-3 py-2 shadow-md text-xs">
+                      <p className="font-medium text-ink-primary">{d.nomeCompleto}</p>
+                      <p className={cfg.text}>{cfg.label} · {d.pontos} pts</p>
+                    </div>
+                  )
+                }}
+              />
+              <ReferenceLine y={7}  stroke="#f59e0b" strokeDasharray="4 3" strokeWidth={1.5} label={{ value: 'Amarelo', position: 'right', fontSize: 10, fill: '#f59e0b' }} />
+              <ReferenceLine y={13} stroke="#f43f5e" strokeDasharray="4 3" strokeWidth={1.5} label={{ value: 'Vermelho', position: 'right', fontSize: 10, fill: '#f43f5e' }} />
+              <Bar dataKey="pontos" radius={[4, 4, 0, 0]} cursor="pointer">
+                {chartData.map((entry, i) => (
+                  <Cell key={i} fill={BAR_COLORS[entry.nivel as keyof typeof BAR_COLORS]} fillOpacity={0.85} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="mt-2 text-[11px] text-ink-tertiary">Clique em uma barra para abrir o dossiê do membro. Linhas tracejadas = limiares do farol.</p>
+      </Card>
+
+      {/* KPIs por membro (se houver dados) */}
+      {kpiChartData.length > 0 && (
+        <Card className="p-4 sm:p-5">
+          <SectionTitle icon={<TrendingUp size={15} />}>KPIs por membro — {CICLO_ATUAL.ano} {CICLO_ATUAL.ciclo}</SectionTitle>
+          <div className="mt-3 h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={kpiChartData} barGap={2} barCategoryGap="30%">
+                <XAxis dataKey="nome" tick={{ fontSize: 11, fill: 'var(--color-ink-secondary)' }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--color-ink-tertiary)' }} axisLine={false} tickLine={false} unit="%" />
+                <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Engajamento" fill="#38bdf8" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="PCO"         fill="#818cf8" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Entregas"    fill="#34d399" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
+
+      {/* Membros por diretoria */}
+      <Card className="p-4 sm:p-5">
+        <SectionTitle icon={<Users size={15} />}>Distribuição por diretoria</SectionTitle>
+        <div className="mt-3 divide-y divide-line">
+          {porDiretoria.map(([diretoria, { total: n, atencao }]) => (
+            <div key={diretoria} className="flex items-center gap-3 py-2.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-ink-primary">{diretoria}</p>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-bg-tertiary">
+                  <div className="h-full rounded-full bg-brand/60" style={{ width: `${(n / total) * 100}%` }} />
+                </div>
+              </div>
+              <span className="shrink-0 text-xs text-ink-secondary">{n} membro{n !== 1 ? 's' : ''}</span>
+              {atencao > 0 && (
+                <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-[10px]', toneBadge.warn)}>
+                  {atencao} em atenção
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+}
