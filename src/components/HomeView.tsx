@@ -440,22 +440,23 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
               <div key={m.id} className="group relative">
                 <button
                   onClick={() => onSelect(m.id)}
-                  className="flex w-full items-start gap-4 rounded-xl border border-line bg-bg-primary p-4 text-left transition-all hover:border-brand/40 hover:shadow-md"
+                  className="flex h-full w-full items-start gap-4 rounded-xl border border-line bg-bg-primary p-4 text-left transition-all hover:border-brand/40 hover:shadow-md"
                 >
                   <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[15px] font-bold', corPorId(m.id))}>
                     {m.iniciais}
                   </div>
-                  <div className="min-w-0 pr-6">
+                  <div className="min-w-0 flex-1 pr-6">
                     <p className="truncate text-[13px] font-semibold text-ink-primary group-hover:text-brand">{m.nome}</p>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargo}</span>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      <span className="truncate rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargo}</span>
                       {m.cargoSecundario && (
-                        <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargoSecundario}</span>
+                        <span className="truncate rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargoSecundario}</span>
                       )}
                     </div>
-                    <p className="mt-1 truncate text-[10px] text-ink-tertiary">
-                      {m.area}{m.areaSecundaria ? ` · ${m.areaSecundaria}` : ''}
-                    </p>
+                    {/* Quando há cargo duplo, os badges acima já indicam as duas diretorias — evita repetir e truncar feio aqui embaixo. */}
+                    {!m.cargoSecundario && (
+                      <p className="mt-1.5 truncate text-[10px] text-ink-tertiary">{m.area}</p>
+                    )}
                   </div>
                 </button>
                 <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
