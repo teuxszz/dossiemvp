@@ -149,10 +149,29 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
   const filtrados = membros.filter((m) => {
     const q = busca.toLowerCase()
     const matchBusca = !q || m.nome.toLowerCase().includes(q) || m.cargo.toLowerCase().includes(q) || m.area.toLowerCase().includes(q)
-    const matchDir = filtroDiretoria === 'todas' || m.area === filtroDiretoria
+    // Quem tem cargo duplo (ex.: Presidente Executivo também Diretor de Demandas)
+    // precisa aparecer nas duas diretorias, não só na principal.
+    const matchDir = filtroDiretoria === 'todas' || m.area === filtroDiretoria || m.areaSecundaria === filtroDiretoria
     const matchPasta = pasta === 'pos' ? ocultos.has(m.id) : !ocultos.has(m.id)
     return matchBusca && matchDir && matchPasta
   })
+
+  // Nível hierárquico a partir do texto do cargo — usado pra dividir a
+  // listagem quando uma diretoria específica está selecionada.
+  function nivelHierarquico(cargo: string): 'Diretoria' | 'Gerência' | 'Coordenadoria' {
+    const c = cargo.toLowerCase()
+    if (c.includes('diretor') || c.includes('presidente')) return 'Diretoria'
+    if (c.includes('gerente')) return 'Gerência'
+    return 'Coordenadoria'
+  }
+
+  const NIVEIS = ['Diretoria', 'Gerência', 'Coordenadoria'] as const
+  const porNivel = filtroDiretoria !== 'todas'
+    ? NIVEIS.map((nivel) => ({
+        nivel,
+        itens: filtrados.filter((m) => nivelHierarquico(m.cargo) === nivel),
+      })).filter((g) => g.itens.length > 0)
+    : null
 
   const diretorias = ['todas', ...Array.from(new Set(membros.map((m) => m.area))).sort()]
 
@@ -425,6 +444,13 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
           )
         })()}
 
+        {/* Contagem */}
+        {filtrados.length > 0 && (
+          <p className="text-xs text-ink-tertiary">
+            {filtrados.length} {filtrados.length === 1 ? 'membro encontrado' : 'membros encontrados'}
+          </p>
+        )}
+
         {/* Grid de membros */}
         {filtrados.length === 0 ? (
           <div className="py-16 text-center text-sm text-ink-tertiary">
@@ -434,53 +460,103 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                 ? 'Nenhum membro encontrado com esse filtro.'
                 : 'Nenhum membro cadastrado ainda.'}
           </div>
+        ) : porNivel ? (
+          <div className="space-y-6">
+            {porNivel.map(({ nivel, itens }) => (
+              <div key={nivel}>
+                <div className="mb-2 flex items-center gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-secondary">{nivel}</h3>
+                  <span className="rounded-full bg-bg-secondary px-2 py-0.5 text-[10px] text-ink-tertiary">
+                    {itens.length} {itens.length === 1 ? 'membro' : 'membros'}
+                  </span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {itens.map((m) => (
+                    <MembroCard
+                      key={m.id}
+                      m={m}
+                      oculto={ocultos.has(m.id)}
+                      onToggleOculto={() => alternarOculto(m.id)}
+                      onRemove={() => setConfirmRemove(m.id)}
+                      onSelect={() => onSelect(m.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filtrados.map((m) => (
-              <div key={m.id} className="group relative">
-                <button
-                  onClick={() => onSelect(m.id)}
-                  className="flex h-full w-full items-start gap-4 rounded-xl border border-line bg-bg-primary p-4 text-left transition-all hover:border-brand/40 hover:shadow-md"
-                >
-                  <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[15px] font-bold', corPorId(m.id))}>
-                    {m.iniciais}
-                  </div>
-                  <div className="min-w-0 flex-1 pr-6">
-                    <p className="truncate text-[13px] font-semibold text-ink-primary group-hover:text-brand">{m.nome}</p>
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      <span className="truncate rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargo}</span>
-                      {m.cargoSecundario && (
-                        <span className="truncate rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargoSecundario}</span>
-                      )}
-                    </div>
-                    {/* Quando há cargo duplo, os badges acima já indicam as duas diretorias — evita repetir e truncar feio aqui embaixo. */}
-                    {!m.cargoSecundario && (
-                      <p className="mt-1.5 truncate text-[10px] text-ink-tertiary">{m.area}</p>
-                    )}
-                  </div>
-                </button>
-                <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); alternarOculto(m.id) }}
-                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-brand/15 hover:text-brand"
-                    title={ocultos.has(m.id) ? 'Restaurar ao painel' : 'Mover para Pós-juniores'}
-                  >
-                    {ocultos.has(m.id) ? <Eye size={13} /> : <EyeOff size={13} />}
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setConfirmRemove(m.id) }}
-                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-bad-soft hover:text-bad"
-                    title="Remover membro"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </div>
+              <MembroCard
+                key={m.id}
+                m={m}
+                oculto={ocultos.has(m.id)}
+                onToggleOculto={() => alternarOculto(m.id)}
+                onRemove={() => setConfirmRemove(m.id)}
+                onSelect={() => onSelect(m.id)}
+              />
             ))}
           </div>
         )}
         </>}
       </main>
+    </div>
+  )
+}
+
+function MembroCard({
+  m,
+  oculto,
+  onToggleOculto,
+  onRemove,
+  onSelect,
+}: {
+  m: Membro
+  oculto: boolean
+  onToggleOculto: () => void
+  onRemove: () => void
+  onSelect: () => void
+}) {
+  return (
+    <div className="group relative">
+      <button
+        onClick={onSelect}
+        className="flex h-full w-full items-start gap-4 rounded-xl border border-line bg-bg-primary p-4 text-left transition-all hover:border-brand/40 hover:shadow-md"
+      >
+        <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[15px] font-bold', corPorId(m.id))}>
+          {m.iniciais}
+        </div>
+        <div className="min-w-0 flex-1 pr-6">
+          <p className="truncate text-[13px] font-semibold text-ink-primary group-hover:text-brand">{m.nome}</p>
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            <span className="truncate rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargo}</span>
+            {m.cargoSecundario && (
+              <span className="truncate rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargoSecundario}</span>
+            )}
+          </div>
+          {/* Quando há cargo duplo, os badges acima já indicam as duas diretorias — evita repetir e truncar feio aqui embaixo. */}
+          {!m.cargoSecundario && (
+            <p className="mt-1.5 truncate text-[10px] text-ink-tertiary">{m.area}</p>
+          )}
+        </div>
+      </button>
+      <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleOculto() }}
+          className="rounded-md p-1.5 text-ink-tertiary hover:bg-brand/15 hover:text-brand"
+          title={oculto ? 'Restaurar ao painel' : 'Mover para Pós-juniores'}
+        >
+          {oculto ? <Eye size={13} /> : <EyeOff size={13} />}
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove() }}
+          className="rounded-md p-1.5 text-ink-tertiary hover:bg-bad-soft hover:text-bad"
+          title="Remover membro"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
     </div>
   )
 }
