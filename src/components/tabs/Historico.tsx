@@ -56,9 +56,10 @@ interface Props {
   dossie: Dossie
   timeline: EventoTimeline[]
   setTimeline: React.Dispatch<React.SetStateAction<EventoTimeline[]>>
+  isAdmin: boolean
 }
 
-export function Historico({ timeline, setTimeline }: Props) {
+export function Historico({ timeline, setTimeline, isAdmin }: Props) {
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState<typeof BLANK_EVENT>({ ...BLANK_EVENT })
 
@@ -86,22 +87,24 @@ export function Historico({ timeline, setTimeline }: Props) {
     <Card className="p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <SectionTitle icon={<GitCommitVertical size={15} />}>Linha do tempo — eventos críticos</SectionTitle>
-        <button
-          onClick={() => setEditing((v) => !v)}
-          className={cn(
-            'flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors',
-            editing
-              ? 'bg-brand/10 text-brand'
-              : 'bg-bg-secondary text-ink-secondary hover:text-brand'
-          )}
-        >
-          <Pencil size={12} />
-          {editing ? 'Concluir edição' : 'Editar'}
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setEditing((v) => !v)}
+            className={cn(
+              'flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors',
+              editing
+                ? 'bg-brand/10 text-brand'
+                : 'bg-bg-secondary text-ink-secondary hover:text-brand'
+            )}
+          >
+            <Pencil size={12} />
+            {editing ? 'Concluir edição' : 'Editar'}
+          </button>
+        )}
       </div>
 
       {/* Formulário de adição — visível só no modo edição */}
-      {editing && (
+      {isAdmin && editing && (
         <div className="mb-4 rounded-lg border border-line bg-bg-secondary p-3">
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-ink-tertiary">Novo evento</p>
           <div className="grid gap-2 sm:grid-cols-2">

@@ -129,6 +129,8 @@ export interface Colaborador {
   iniciais: string
   acessoRestrito: boolean
   ssoMfa: boolean
+  /** E-mail de login (Supabase Auth) — vincula esta linha ao usuário autenticado. */
+  email?: string
 }
 
 // ---- PDAA (Plano de Avaliação e Autogestão · sistema de pontos / farol) ----

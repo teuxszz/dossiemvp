@@ -1,4 +1,4 @@
-import { ChevronLeft, Download, Sparkles, Sun, Moon, Database, FlaskConical } from 'lucide-react'
+import { ChevronLeft, Download, Sparkles, Sun, Moon, Database, FlaskConical, LogOut } from 'lucide-react'
 import { cn } from '@/lib/ui'
 import type { Colaborador, Dossie } from '@/lib/types'
 import type { DataSource } from '@/hooks/useDossie'
@@ -8,14 +8,15 @@ import { farolDe } from '@/lib/pdaa'
 interface Props {
   colaborador: Colaborador
   dossie: Dossie
-  onBack: () => void
+  onBack?: () => void
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   source: DataSource
   pontosPdaa: number
+  onSignOut?: () => void
 }
 
-export function Header({ colaborador, dossie, onBack, theme, onToggleTheme, source, pontosPdaa }: Props) {
+export function Header({ colaborador, dossie, onBack, theme, onToggleTheme, source, pontosPdaa, onSignOut }: Props) {
   const farol = farolDe(pontosPdaa)
 
   function exportarJson() {
@@ -44,14 +45,16 @@ export function Header({ colaborador, dossie, onBack, theme, onToggleTheme, sour
   return (
     <header className="border-b border-line bg-bg-primary px-4 py-4 sm:px-6">
       <div className="flex items-center gap-3">
-        {/* Botão voltar */}
-        <button
-          onClick={onBack}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line bg-bg-secondary text-ink-tertiary hover:text-brand"
-          title="Voltar à lista"
-        >
-          <ChevronLeft size={16} />
-        </button>
+        {/* Botão voltar (só existe pra admin — membro comum não tem lista pra voltar) */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line bg-bg-secondary text-ink-tertiary hover:text-brand"
+            title="Voltar à lista"
+          >
+            <ChevronLeft size={16} />
+          </button>
+        )}
 
         {/* Avatar */}
         <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-brand-dark text-[15px] font-medium text-brand-soft">
@@ -102,6 +105,15 @@ export function Header({ colaborador, dossie, onBack, theme, onToggleTheme, sour
           >
             <Sparkles size={13} /> Análise IA
           </button>
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-bg-secondary text-ink-tertiary hover:text-bad"
+              title="Sair"
+            >
+              <LogOut size={15} />
+            </button>
+          )}
         </div>
       </div>
     </header>

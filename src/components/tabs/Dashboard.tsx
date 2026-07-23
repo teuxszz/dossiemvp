@@ -18,6 +18,7 @@ interface Props {
   snapshots: SnapshotCiclo[]
   configCiclo: ConfigCiclo | null
   mediaTimeKpis: KpiCiclo[]
+  isAdmin: boolean
 }
 
 // Campos de KPI editáveis manualmente
@@ -30,7 +31,7 @@ const KPI_FIELDS = [
 
 type KpiField = (typeof KPI_FIELDS)[number]['key']
 
-export function Dashboard({ dossie, pontosPdaa, cicloAtual, kpisPorCiclo, setKpisPorCiclo, snapshots, configCiclo, mediaTimeKpis }: Props) {
+export function Dashboard({ dossie, pontosPdaa, cicloAtual, kpisPorCiclo, setKpisPorCiclo, snapshots, configCiclo, mediaTimeKpis, isAdmin }: Props) {
   const anosKpi = useMemo(
     () => [...new Set(kpisPorCiclo.map((k) => k.ano))].sort((a, b) => b - a),
     [kpisPorCiclo],
@@ -118,7 +119,7 @@ export function Dashboard({ dossie, pontosPdaa, cicloAtual, kpisPorCiclo, setKpi
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <SectionTitle icon={<BarChart3 size={15} />}>KPIs por ciclo — {anoKpi}</SectionTitle>
           <div className="flex items-center gap-2">
-            {anoKpi === cicloAtual.ano && !snapshotAtual && (
+            {isAdmin && anoKpi === cicloAtual.ano && !snapshotAtual && (
               editandoKpi ? (
                 <div className="flex gap-1.5">
                   <button onClick={salvarKpi} className="flex items-center gap-1 rounded-md bg-good-soft px-2 py-1 text-[11px] text-good hover:opacity-80">

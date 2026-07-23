@@ -22,6 +22,7 @@ import { YearTabs } from '../YearTabs'
 import { AbonosPorCicloChart, PontuacaoPorCicloChart } from '../charts/Charts'
 import { CONDUTAS, CATEGORIA_LABEL, CATEGORIA_TONE, PONTOS_POR_CATEGORIA, comCicloAtual, filtrarCiclosFuturos, farolDe, ABONOS_CATALOGO } from '@/lib/pdaa'
 import { cn, toneBadge, type Tone } from '@/lib/ui'
+import { supabase } from '@/lib/supabase'
 import type { CategoriaConduta, ConfigCiclo, Dossie, RegistroConduta, SnapshotCiclo, UsoAbono } from '@/lib/types'
 
 const CATEGORIAS: CategoriaConduta[] = ['leve', 'moderada', 'alerta', 'grave']
@@ -36,6 +37,8 @@ interface Props {
   onSalvarConfig: (cfg: ConfigCiclo) => void
   onFecharCiclo: (kpis: { engajamento: number; pco: number; entregas: number; presenca: number }) => void
   snapshots: SnapshotCiclo[]
+  isAdmin: boolean
+  currentEmail: string | null
 }
 
 function formatDate(iso: string) {
@@ -49,7 +52,9 @@ function cicloFechadoHoje(config: ConfigCiclo | null, cicloAtual: { ano: number;
   return config.cicloRef === ref && new Date(config.dataFechamento) <= new Date()
 }
 
-export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, configCiclo, onSalvarConfig, onFecharCiclo, snapshots }: Props) {
+export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, configCiclo, onSalvarConfig, onFecharCiclo, snapshots, isAdmin, currentEmail }: Props) {
+  const [abonoSalvando, setAbonoSalvando] = useState(false)
+  const [abonoErro, setAbonoErro] = useState<string | null>(null)
   const [showPicker, setShowPicker] = useState(false)
   const [pickerCategoria, setPickerCategoria] = useState<CategoriaConduta | 'todas'>('todas')
   const [pickerBusca, setPickerBusca] = useState('')
@@ -225,9 +230,11 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
                   placeholder="Observação opcional..."
                   className="w-full rounded border border-line bg-bg-tertiary px-2 py-1.5 text-xs text-ink-primary focus:border-brand focus:outline-none"
                 />
+                {abonoErro && <p className="text-[11px] text-bad">{abonoErro}</p>}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
+                    disabled={abonoSalvando}
+                    onClick={async () => {
                       const tipo = ABONOS_CATALOGO.find((a) => a.id === abonoTipoSel)
                       if (!tipo) return
                       const now = new Date()
@@ -239,13 +246,31 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
                         data: `${meses[now.getMonth()]} ${now.getFullYear()}`,
                         pontosAbonados: tipo.pontosMaximos,
                       }
+                      setAbonoErro(null)
+                      // Membro comum: grava de verdade via RPC (única escrita liberada pra ele).
+                      // Admin: segue o padrão do resto do app — só em memória, nesta sessão.
+                      if (!isAdmin && currentEmail && supabase) {
+                        setAbonoSalvando(true)
+                        const { error } = await supabase.rpc('registrar_abono_proprio', {
+                          p_ano: cicloAtual.ano,
+                          p_ciclo: cicloAtual.ciclo,
+                          p_tipo: tipo.tipo,
+                          p_descricao: abonoDesc || null,
+                          p_pontos_abonados: tipo.pontosMaximos,
+                        })
+                        setAbonoSalvando(false)
+                        if (error) {
+                          setAbonoErro(error.message)
+                          return
+                        }
+                      }
                       setAbonosAtual((prev) => [...prev, novo])
                       setAbonoDesc('')
                       setShowAddAbono(false)
                     }}
-                    className="flex items-center gap-1 rounded-md bg-brand px-3 py-1.5 text-xs text-white hover:bg-brand/90"
+                    className="flex items-center gap-1 rounded-md bg-brand px-3 py-1.5 text-xs text-white hover:bg-brand/90 disabled:opacity-50"
                   >
-                    <Check size={11} /> Registrar
+                    <Check size={11} /> {abonoSalvando ? 'Registrando…' : 'Registrar'}
                   </button>
                   <button onClick={() => setShowAddAbono(false)} className="text-xs text-ink-tertiary hover:text-ink-primary">Cancelar</button>
                 </div>
@@ -261,9 +286,11 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
                     <span className={cn('rounded px-1.5 py-0.5', toneBadge.good)}>{ua.pontosAbonados}pt</span>
                     <span className="flex-1 text-ink-secondary truncate">{ua.tipo}</span>
                     <span className="shrink-0 text-ink-tertiary">{ua.data}</span>
-                    <button onClick={() => setAbonosAtual((p) => p.filter((a) => a.id !== ua.id))} className="text-ink-tertiary hover:text-bad">
-                      <Trash2 size={11} />
-                    </button>
+                    {isAdmin && (
+                      <button onClick={() => setAbonosAtual((p) => p.filter((a) => a.id !== ua.id))} className="text-ink-tertiary hover:text-bad">
+                        <Trash2 size={11} />
+                      </button>
+                    )}
                   </div>
                 ))}
                 <div className="mt-1 border-t border-line pt-1 text-[11px] font-medium text-good">
@@ -420,10 +447,11 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
         </div>
       </Card>
 
-      {/* Registro editável de condutas */}
+      {/* Registro editável de condutas — só admin registra/remove/fecha ciclo */}
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between">
           <SectionTitle icon={<ShieldAlert size={15} />}>Registro de condutas — {cicloAtual.ano} {cicloAtual.ciclo}</SectionTitle>
+          {isAdmin && (
           <div className="flex items-center gap-2">
             {/* Config de prazo */}
             <button
@@ -449,10 +477,11 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
               </button>
             )}
           </div>
+          )}
         </div>
 
         {/* Painel config de prazo */}
-        {showConfig && (
+        {isAdmin && showConfig && (
           <div className="mt-3 rounded-lg border border-line bg-bg-secondary p-3">
             <p className="mb-2 text-[11px] font-medium text-ink-secondary">
               Estipule a data de fechamento do ciclo {cicloRef} (G&G — Gerente de Pesquisas e Pessoas)
@@ -475,7 +504,7 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
         )}
 
         {/* Painel fechar ciclo */}
-        {showFechar && (
+        {isAdmin && showFechar && (
           <div className="mt-3 rounded-lg border border-warn/30 bg-warn/5 p-4">
             <div className="mb-3 flex items-start gap-2">
               <AlertCircle size={15} className="mt-0.5 shrink-0 text-warn" />
@@ -517,12 +546,14 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
           </div>
         )}
 
+        {isAdmin && (
         <p className="mb-3 mt-3 text-xs text-ink-secondary">
           Escolha uma conduta do catálogo do PDAA. Os pontos somam automaticamente e atualizam o farol em todas as abas.
         </p>
+        )}
 
         {/* Picker de conduta */}
-        {!snapshotAtual && (
+        {isAdmin && !snapshotAtual && (
           <>
             {!showPicker ? (
               <button
@@ -662,7 +693,7 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
                   </p>
                 )}
               </div>
-              {!snapshotAtual && (
+              {isAdmin && !snapshotAtual && (
                 <button
                   onClick={() => remover(r.id)}
                   className="shrink-0 rounded-md p-1.5 text-ink-tertiary hover:bg-bad-soft hover:text-bad"

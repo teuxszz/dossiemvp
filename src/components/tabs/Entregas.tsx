@@ -85,9 +85,10 @@ interface GtCardProps {
   gt: GrupoTrabalho
   onChange: (updated: GrupoTrabalho) => void
   onRemoveGt: () => void
+  isAdmin: boolean
 }
 
-function GtCard({ gt, onChange, onRemoveGt }: GtCardProps) {
+function GtCard({ gt, onChange, onRemoveGt, isAdmin }: GtCardProps) {
   const [open, setOpen] = useState(true)
   const [editing, setEditing] = useState(false)
   const [nomeEdit, setNomeEdit] = useState(gt.nome)
@@ -120,7 +121,7 @@ function GtCard({ gt, onChange, onRemoveGt }: GtCardProps) {
     <div className="rounded-lg border border-line bg-bg-secondary">
       {/* Header do GT */}
       <div className="flex items-center gap-2 px-4 py-3">
-        {editing ? (
+        {isAdmin && editing ? (
           <>
             <div className="flex flex-1 flex-col gap-1">
               <input
@@ -165,12 +166,16 @@ function GtCard({ gt, onChange, onRemoveGt }: GtCardProps) {
               <span className="ml-auto text-[11px] text-ink-tertiary">{total} entrega{total !== 1 ? 's' : ''}</span>
               {open ? <ChevronUp size={14} className="shrink-0 text-ink-tertiary" /> : <ChevronDown size={14} className="shrink-0 text-ink-tertiary" />}
             </button>
-            <button onClick={() => setEditing(true)} className="ml-2 shrink-0 text-ink-tertiary hover:text-brand">
-              <Pencil size={13} />
-            </button>
-            <button onClick={onRemoveGt} className="shrink-0 text-ink-tertiary hover:text-bad">
-              <Trash2 size={13} />
-            </button>
+            {isAdmin && (
+              <>
+                <button onClick={() => setEditing(true)} className="ml-2 shrink-0 text-ink-tertiary hover:text-brand">
+                  <Pencil size={13} />
+                </button>
+                <button onClick={onRemoveGt} className="shrink-0 text-ink-tertiary hover:text-bad">
+                  <Trash2 size={13} />
+                </button>
+              </>
+            )}
           </>
         )}
       </div>
@@ -185,13 +190,13 @@ function GtCard({ gt, onChange, onRemoveGt }: GtCardProps) {
               <EntregaRow
                 key={e.id}
                 entrega={e}
-                editing={editing}
+                editing={isAdmin && editing}
                 onChange={(updated) => updateEntrega(e.id, updated)}
                 onRemove={() => removeEntrega(e.id)}
               />
             ))}
           </div>
-          {editing && (
+          {isAdmin && editing && (
             <button
               onClick={addEntrega}
               className="mt-2 flex items-center gap-1.5 text-[11px] text-brand hover:opacity-80"
@@ -199,7 +204,7 @@ function GtCard({ gt, onChange, onRemoveGt }: GtCardProps) {
               <Plus size={12} /> Adicionar entrega
             </button>
           )}
-          {!editing && (
+          {isAdmin && !editing && (
             <button
               onClick={() => setEditing(true)}
               className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-tertiary hover:text-brand"
@@ -218,9 +223,10 @@ interface Props {
   gts: GrupoTrabalho[]
   setGts: React.Dispatch<React.SetStateAction<GrupoTrabalho[]>>
   cicloAtual: { ano: number; ciclo: string }
+  isAdmin: boolean
 }
 
-export function Entregas({ gts, setGts, cicloAtual }: Props) {
+export function Entregas({ gts, setGts, cicloAtual, isAdmin }: Props) {
   const anos = useMemo(
     () => [...new Set(gts.map((g) => g.ano))].sort((a, b) => b - a),
     [gts],
@@ -281,19 +287,21 @@ export function Entregas({ gts, setGts, cicloAtual }: Props) {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <SectionTitle icon={<Package size={15} />}>Entregas por GT — {ano}</SectionTitle>
           <div className="flex items-center gap-2">
-            <button
-              onClick={addGt}
-              className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand/90"
-            >
-              <Plus size={13} /> Novo GT
-            </button>
+            {isAdmin && (
+              <button
+                onClick={addGt}
+                className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand/90"
+              >
+                <Plus size={13} /> Novo GT
+              </button>
+            )}
             {anos.length > 0 && <YearTabs anos={anos} value={ano} onChange={setAno} />}
           </div>
         </div>
 
         {gtDoAno.length === 0 ? (
           <p className="py-8 text-center text-xs text-ink-tertiary">
-            Nenhum GT registrado para {ano}. Clique em "Novo GT" para adicionar.
+            {isAdmin ? 'Nenhum GT registrado para ' + ano + '. Clique em "Novo GT" para adicionar.' : `Nenhum GT registrado para ${ano}.`}
           </p>
         ) : (
           <div className="space-y-3">
@@ -303,6 +311,7 @@ export function Entregas({ gts, setGts, cicloAtual }: Props) {
                 gt={gt}
                 onChange={(updated) => updateGt(gt.id, updated)}
                 onRemoveGt={() => removeGt(gt.id)}
+                isAdmin={isAdmin}
               />
             ))}
           </div>

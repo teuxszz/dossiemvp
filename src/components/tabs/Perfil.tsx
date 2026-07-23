@@ -25,6 +25,7 @@ import {
 import { Card, SectionTitle } from '../Card'
 import { RadarCompetencias } from '../charts/Charts'
 import { cn, toneBadge, type Tone } from '@/lib/ui'
+import { supabase } from '@/lib/supabase'
 import type { Dossie, Perfil as PerfilType, Competencia, PassagemDiretoria, ParticipacaoGT, AvaliacaoDesenvolvimento } from '@/lib/types'
 
 const recomIcon: Record<Tone, typeof TrendingUp> = {
@@ -42,15 +43,42 @@ function barColor(p: number) {
 
 // ---------- Dados do membro ----------
 
-function DadosMembro({ dossie, cargoAtual }: { dossie: Dossie; cargoAtual: string }) {
+// Campos que o próprio membro (não-admin) pode editar — o resto é só leitura pra ele.
+const CAMPOS_AUTOEDITAVEIS = new Set<keyof PerfilType>(['celular', 'email', 'periodoCurso'])
+
+function DadosMembro({
+  dossie,
+  cargoAtual,
+  isAdmin,
+  currentEmail,
+}: {
+  dossie: Dossie
+  cargoAtual: string
+  isAdmin: boolean
+  currentEmail: string | null
+}) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<PerfilType & { cargoAtual: string }>({
     ...dossie.perfil,
     cargoAtual,
   })
   const [saved, setSaved] = useState(draft)
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
 
-  function save() {
+  async function save() {
+    setErro(null)
+    if (!isAdmin) {
+      if (!currentEmail || !supabase) { setEditing(false); return }
+      setSalvando(true)
+      const { error } = await supabase.rpc('atualizar_perfil_proprio', {
+        p_celular: draft.celular,
+        p_email_contato: draft.email,
+        p_periodo_curso: draft.periodoCurso,
+      })
+      setSalvando(false)
+      if (error) { setErro(error.message); return }
+    }
     setSaved(draft)
     setEditing(false)
   }
@@ -66,7 +94,7 @@ function DadosMembro({ dossie, cargoAtual }: { dossie: Dossie; cargoAtual: strin
     { icon: Cake, label: 'Nascimento', field: 'nascimento' },
     { icon: Phone, label: 'Celular', field: 'celular' },
     { icon: Mail, label: 'E-mail', field: 'email' },
-    { icon: GraduationCap, label: 'Curso', field: 'curso' },
+    { icon: GraduationCap, label: 'Período do curso', field: 'periodoCurso' },
   ]
 
   return (
@@ -75,8 +103,8 @@ function DadosMembro({ dossie, cargoAtual }: { dossie: Dossie; cargoAtual: strin
         <SectionTitle icon={<IdCard size={15} />}>Dados do membro</SectionTitle>
         {editing ? (
           <div className="flex gap-1.5">
-            <button onClick={save} className="flex items-center gap-1 rounded-md bg-good-soft px-2 py-1 text-[11px] text-good hover:opacity-80">
-              <Check size={12} /> Salvar
+            <button disabled={salvando} onClick={save} className="flex items-center gap-1 rounded-md bg-good-soft px-2 py-1 text-[11px] text-good hover:opacity-80 disabled:opacity-50">
+              <Check size={12} /> {salvando ? 'Salvando…' : 'Salvar'}
             </button>
             <button onClick={cancel} className="flex items-center gap-1 rounded-md bg-bg-secondary px-2 py-1 text-[11px] text-ink-secondary hover:opacity-80">
               <X size={12} /> Cancelar
@@ -89,27 +117,32 @@ function DadosMembro({ dossie, cargoAtual }: { dossie: Dossie; cargoAtual: strin
         )}
       </div>
 
+      {erro && <p className="mt-2 text-[11px] text-bad">{erro}</p>}
+
       <div className="divide-y divide-line">
-        {rows.map((r) => (
-          <div key={r.label} className="flex items-center gap-3 py-2 text-xs">
-            <r.icon size={15} className="shrink-0 text-ink-tertiary" />
-            <span className="text-ink-secondary">{r.label}</span>
-            {editing ? (
-              <input
-                value={String(draft[r.field as keyof typeof draft] ?? '')}
-                onChange={(e) => setDraft((prev) => ({ ...prev, [r.field]: e.target.value }))}
-                className="ml-auto w-44 rounded border border-line bg-bg-tertiary px-2 py-0.5 text-right text-xs text-ink-primary focus:border-brand focus:outline-none"
-              />
-            ) : (
-              <span className="ml-auto text-right font-medium text-ink-primary">
-                {r.field === 'cargoAtual' ? p.cargoAtual : String(p[r.field as keyof PerfilType] ?? '')}
-              </span>
-            )}
-          </div>
-        ))}
+        {rows.map((r) => {
+          const podeEditar = editing && (isAdmin || CAMPOS_AUTOEDITAVEIS.has(r.field as keyof PerfilType))
+          return (
+            <div key={r.label} className="flex items-center gap-3 py-2 text-xs">
+              <r.icon size={15} className="shrink-0 text-ink-tertiary" />
+              <span className="text-ink-secondary">{r.label}</span>
+              {podeEditar ? (
+                <input
+                  value={String(draft[r.field as keyof typeof draft] ?? '')}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, [r.field]: e.target.value }))}
+                  className="ml-auto w-44 rounded border border-line bg-bg-tertiary px-2 py-0.5 text-right text-xs text-ink-primary focus:border-brand focus:outline-none"
+                />
+              ) : (
+                <span className="ml-auto text-right font-medium text-ink-primary">
+                  {r.field === 'cargoAtual' ? p.cargoAtual : String(p[r.field as keyof PerfilType] ?? '')}
+                </span>
+              )}
+            </div>
+          )
+        })}
       </div>
 
-      {editing ? (
+      {isAdmin && editing ? (
         <div className="mt-3 space-y-2">
           <div className="flex items-center gap-2 text-xs">
             <span className="shrink-0 text-ink-secondary">Arquétipo</span>
@@ -153,7 +186,7 @@ function DadosMembro({ dossie, cargoAtual }: { dossie: Dossie; cargoAtual: strin
 
 // ---------- Trajetória ----------
 
-function Trajetoria({ dossie }: { dossie: Dossie }) {
+function Trajetoria({ dossie, isAdmin }: { dossie: Dossie; isAdmin: boolean }) {
   const p = dossie.perfil
   const [editing, setEditing] = useState(false)
   const [diretoriaAtual, setDiretoriaAtual] = useState(p.diretoriaAtual)
@@ -190,7 +223,7 @@ function Trajetoria({ dossie }: { dossie: Dossie }) {
     <Card className="p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <SectionTitle icon={<Compass size={15} />}>Trajetória na CONSEJ</SectionTitle>
-        {editing ? (
+        {isAdmin && (editing ? (
           <div className="flex gap-1.5">
             <button onClick={save} className="flex items-center gap-1 rounded-md bg-good-soft px-2 py-1 text-[11px] text-good hover:opacity-80">
               <Check size={12} /> Salvar
@@ -203,7 +236,7 @@ function Trajetoria({ dossie }: { dossie: Dossie }) {
           <button onClick={() => setEditing(true)} className="flex items-center gap-1 rounded-md bg-bg-secondary px-2 py-1 text-[11px] text-ink-secondary hover:text-brand">
             <Pencil size={12} /> Editar
           </button>
-        )}
+        ))}
       </div>
 
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -294,7 +327,7 @@ function Trajetoria({ dossie }: { dossie: Dossie }) {
 
 // ---------- Competências ----------
 
-function Competencias({ dossie }: { dossie: Dossie }) {
+function Competencias({ dossie, isAdmin }: { dossie: Dossie; isAdmin: boolean }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<Competencia[]>(dossie.competencias)
   const [saved, setSaved] = useState(draft)
@@ -306,7 +339,7 @@ function Competencias({ dossie }: { dossie: Dossie }) {
     <Card className="p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <SectionTitle icon={<Hexagon size={15} />}>Competências comportamentais</SectionTitle>
-        {editing ? (
+        {isAdmin && (editing ? (
           <div className="flex gap-1.5">
             <button onClick={save} className="flex items-center gap-1 rounded-md bg-good-soft px-2 py-1 text-[11px] text-good hover:opacity-80">
               <Check size={12} /> Salvar
@@ -319,7 +352,7 @@ function Competencias({ dossie }: { dossie: Dossie }) {
           <button onClick={() => setEditing(true)} className="flex items-center gap-1 rounded-md bg-bg-secondary px-2 py-1 text-[11px] text-ink-secondary hover:text-brand">
             <Pencil size={12} /> Editar
           </button>
-        )}
+        ))}
       </div>
 
       {editing ? (
@@ -361,9 +394,11 @@ interface GtDraft {
 function GtsPorCiclo({
   participacaoGTs,
   setParticipacaoGTs,
+  isAdmin,
 }: {
   participacaoGTs: ParticipacaoGT[]
   setParticipacaoGTs: React.Dispatch<React.SetStateAction<ParticipacaoGT[]>>
+  isAdmin: boolean
 }) {
   const [expandedCiclo, setExpandedCiclo] = useState<string | null>(null)
   const [editandoCiclo, setEditandoCiclo] = useState<string | null>(null)
@@ -437,12 +472,14 @@ function GtsPorCiclo({
     <Card className="p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <SectionTitle icon={<Users size={15} />}>GTs por ciclo</SectionTitle>
-        <button
-          onClick={addCiclo}
-          className="flex items-center gap-1 rounded-md bg-bg-secondary px-2 py-1 text-[11px] text-ink-secondary hover:text-brand"
-        >
-          <Plus size={12} /> Adicionar ciclo
-        </button>
+        {isAdmin && (
+          <button
+            onClick={addCiclo}
+            className="flex items-center gap-1 rounded-md bg-bg-secondary px-2 py-1 text-[11px] text-ink-secondary hover:text-brand"
+          >
+            <Plus size={12} /> Adicionar ciclo
+          </button>
+        )}
       </div>
 
       {sorted.length === 0 && (
@@ -497,7 +534,7 @@ function GtsPorCiclo({
                     {isOpen ? <ChevronUp size={13} className="ml-auto shrink-0 text-ink-tertiary" /> : <ChevronDown size={13} className="ml-auto shrink-0 text-ink-tertiary" />}
                   </button>
                 )}
-                {!isEditing && (
+                {isAdmin && !isEditing && (
                   <>
                     <button onClick={() => startEdit(p)} className="shrink-0 text-ink-tertiary hover:text-brand">
                       <Pencil size={12} />
@@ -601,9 +638,11 @@ function EditableList({
 function Desenvolvimento1a1({
   avaliacao,
   setAvaliacao,
+  isAdmin,
 }: {
   avaliacao: AvaliacaoDesenvolvimento
   setAvaliacao: React.Dispatch<React.SetStateAction<AvaliacaoDesenvolvimento>>
+  isAdmin: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<AvaliacaoDesenvolvimento>(avaliacao)
@@ -625,7 +664,7 @@ function Desenvolvimento1a1({
     <Card className="p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <SectionTitle icon={<TrendingUp size={15} />}>Desenvolvimento e 1:1</SectionTitle>
-        {editing ? (
+        {isAdmin && (editing ? (
           <div className="flex gap-1.5">
             <button onClick={save} className="flex items-center gap-1 rounded-md bg-good-soft px-2 py-1 text-[11px] text-good hover:opacity-80">
               <Check size={12} /> Salvar
@@ -638,7 +677,7 @@ function Desenvolvimento1a1({
           <button onClick={() => setEditing(true)} className="flex items-center gap-1 rounded-md bg-bg-secondary px-2 py-1 text-[11px] text-ink-secondary hover:text-brand">
             <Pencil size={12} /> Editar
           </button>
-        )}
+        ))}
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -679,26 +718,30 @@ export function Perfil({
   dossie,
   participacaoGTs,
   setParticipacaoGTs,
+  isAdmin,
+  currentEmail,
 }: {
   dossie: Dossie
   participacaoGTs: ParticipacaoGT[]
   setParticipacaoGTs: React.Dispatch<React.SetStateAction<ParticipacaoGT[]>>
+  isAdmin: boolean
+  currentEmail: string | null
 }) {
   const [avaliacao, setAvaliacao] = useState<AvaliacaoDesenvolvimento>(dossie.avaliacaoDesenvolvimento)
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <DadosMembro dossie={dossie} cargoAtual={dossie.colaborador.cargo} />
-        <Trajetoria dossie={dossie} />
+        <DadosMembro dossie={dossie} cargoAtual={dossie.colaborador.cargo} isAdmin={isAdmin} currentEmail={currentEmail} />
+        <Trajetoria dossie={dossie} isAdmin={isAdmin} />
       </div>
 
-      <GtsPorCiclo participacaoGTs={participacaoGTs} setParticipacaoGTs={setParticipacaoGTs} />
+      <GtsPorCiclo participacaoGTs={participacaoGTs} setParticipacaoGTs={setParticipacaoGTs} isAdmin={isAdmin} />
 
-      <Desenvolvimento1a1 avaliacao={avaliacao} setAvaliacao={setAvaliacao} />
+      <Desenvolvimento1a1 avaliacao={avaliacao} setAvaliacao={setAvaliacao} isAdmin={isAdmin} />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Competencias dossie={dossie} />
+        <Competencias dossie={dossie} isAdmin={isAdmin} />
 
         <Card className="p-4 sm:p-5">
           <SectionTitle icon={<ListChecks size={15} />}>PDI — plano de desenvolvimento</SectionTitle>

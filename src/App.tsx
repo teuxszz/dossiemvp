@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Sidebar, type TabKey } from './components/Sidebar'
 import { Header } from './components/Header'
 import { HomeView } from './components/HomeView'
+import { LoginScreen } from './components/LoginScreen'
 import { Dashboard } from './components/tabs/Dashboard'
 import { Perfil } from './components/tabs/Perfil'
 import { Pdaa } from './components/tabs/Pdaa'
@@ -9,8 +10,10 @@ import { Historico } from './components/tabs/Historico'
 import { Feedbacks } from './components/tabs/Feedbacks'
 import { Entregas } from './components/tabs/Entregas'
 import { Seguranca } from './components/tabs/Seguranca'
+import { Administradores } from './components/tabs/Administradores'
 import { FeedbackForm } from './components/FeedbackForm'
 import { useDossie } from './hooks/useDossie'
+import { useAuth } from './hooks/useAuth'
 import { useTheme } from './hooks/useTheme'
 import { farolDe } from './lib/pdaa'
 import { computeMediaTime } from './lib/mockData'
@@ -51,13 +54,83 @@ export function App() {
       />
     )
   }
-  return <MainApp />
+
+  const auth = useAuth()
+
+  if (auth.session === undefined || auth.loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg-tertiary text-sm text-ink-tertiary">
+        Carregando…
+      </div>
+    )
+  }
+
+  if (auth.session === null) {
+    return <LoginScreen onSubmit={auth.signIn} error={auth.error} />
+  }
+
+  return <MainApp email={auth.email} isAdmin={auth.isAdmin} onSignOut={auth.signOut} />
 }
 
 // Camada de navegação — decide entre HomeView e DossierView
-function MainApp() {
-  const { dossie, membros, allDossies, selectedId, setSelectedId, addMembro, removeMembro, loading, error, source } = useDossie()
+function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin: boolean; onSignOut: () => void }) {
+  const { dossie, membros, allDossies, selectedId, setSelectedId, addMembro, removeMembro, resolveIdByEmail, loading, error, source } = useDossie()
   const { theme, toggle } = useTheme()
+  const [resolvingOwn, setResolvingOwn] = useState(false)
+  const [ownNotFound, setOwnNotFound] = useState(false)
+
+  // Membro comum (não-admin): não escolhe quem ver — cai direto no próprio dossiê.
+  useEffect(() => {
+    if (isAdmin || !email || selectedId) return
+    let active = true
+    setResolvingOwn(true)
+    resolveIdByEmail(email).then((id) => {
+      if (!active) return
+      setResolvingOwn(false)
+      if (id) setSelectedId(id)
+      else setOwnNotFound(true)
+    })
+    return () => { active = false }
+  }, [isAdmin, email, selectedId])
+
+  if (!isAdmin) {
+    if (!selectedId) {
+      if (resolvingOwn) {
+        return (
+          <div className="flex min-h-screen items-center justify-center bg-bg-tertiary text-sm text-ink-tertiary">
+            Carregando…
+          </div>
+        )
+      }
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg-tertiary px-4 text-center text-sm text-ink-tertiary">
+          <p>
+            {ownNotFound
+              ? <>Não encontramos um dossiê vinculado a <strong className="text-ink-primary">{email}</strong>. Fale com a Diretoria de Pesquisas e Pessoas.</>
+              : 'Carregando…'}
+          </p>
+          <button onClick={onSignOut} className="rounded-lg border border-line px-4 py-2 text-xs text-ink-secondary hover:text-ink-primary">
+            Sair
+          </button>
+        </div>
+      )
+    }
+    return (
+      <DossierView
+        dossie={dossie}
+        allDossies={allDossies}
+        loading={loading}
+        error={error}
+        source={source}
+        theme={theme}
+        onToggleTheme={toggle}
+        onBack={undefined}
+        isAdmin={false}
+        currentEmail={email}
+        onSignOut={onSignOut}
+      />
+    )
+  }
 
   if (!selectedId) {
     return (
@@ -69,6 +142,7 @@ function MainApp() {
         onRemoveMembro={removeMembro}
         theme={theme}
         onToggleTheme={toggle}
+        onSignOut={onSignOut}
       />
     )
   }
@@ -83,6 +157,9 @@ function MainApp() {
       theme={theme}
       onToggleTheme={toggle}
       onBack={() => setSelectedId(null)}
+      isAdmin
+      currentEmail={email}
+      onSignOut={onSignOut}
     />
   )
 }
@@ -96,10 +173,13 @@ interface DossierViewProps {
   source: DataSource
   theme: 'light' | 'dark'
   onToggleTheme: () => void
-  onBack: () => void
+  onBack?: () => void
+  isAdmin: boolean
+  currentEmail: string | null
+  onSignOut: () => void
 }
 
-function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack }: DossierViewProps) {
+function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack, isAdmin, currentEmail, onSignOut }: DossierViewProps) {
   const mediaTimeKpis = useMemo(() => computeMediaTime(allDossies), [allDossies])
   const [tab, setTab] = useState<TabKey>('dashboard')
 
@@ -223,7 +303,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
 
   return (
     <div className="flex min-h-screen flex-col bg-bg-tertiary md:flex-row">
-      <Sidebar active={tab} onChange={setTab} />
+      <Sidebar active={tab} onChange={setTab} isAdmin={isAdmin} />
 
       <div className="min-w-0 flex-1">
         {error && (
@@ -244,6 +324,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
               onToggleTheme={onToggleTheme}
               source={source}
               pontosPdaa={pontosPdaa}
+              onSignOut={onSignOut}
             />
             <main className="mx-auto max-w-5xl p-4 sm:p-6">
               {tab === 'dashboard' && (
@@ -256,9 +337,18 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   snapshots={snapshots}
                   configCiclo={configCiclo}
                   mediaTimeKpis={mediaTimeKpis}
+                  isAdmin={isAdmin}
                 />
               )}
-              {tab === 'perfil' && <Perfil dossie={dossie} participacaoGTs={participacaoGTs} setParticipacaoGTs={setParticipacaoGTs} />}
+              {tab === 'perfil' && (
+                <Perfil
+                  dossie={dossie}
+                  participacaoGTs={participacaoGTs}
+                  setParticipacaoGTs={setParticipacaoGTs}
+                  isAdmin={isAdmin}
+                  currentEmail={currentEmail}
+                />
+              )}
               {tab === 'pdaa' && (
                 <Pdaa
                   dossie={dossie}
@@ -270,10 +360,12 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   onSalvarConfig={salvarConfigCiclo}
                   onFecharCiclo={fecharCiclo}
                   snapshots={snapshots}
+                  isAdmin={isAdmin}
+                  currentEmail={currentEmail}
                 />
               )}
               {tab === 'historico' && (
-                <Historico dossie={dossie} timeline={timeline} setTimeline={setTimeline} />
+                <Historico dossie={dossie} timeline={timeline} setTimeline={setTimeline} isAdmin={isAdmin} />
               )}
               {tab === 'entregas' && (
                 <Entregas
@@ -281,6 +373,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   gts={gts}
                   setGts={setGts}
                   cicloAtual={cicloAtual}
+                  isAdmin={isAdmin}
                 />
               )}
               {tab === 'feedbacks' && (
@@ -289,9 +382,11 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   feedbacks={feedbacks}
                   onAddFeedback={(fb) => setFeedbacks((p) => [...p, fb])}
                   onRemoveFeedback={(id) => setFeedbacks((p) => p.filter((f) => f.id !== id))}
+                  isAdmin={isAdmin}
                 />
               )}
               {tab === 'seguranca' && <Seguranca dossie={dossie} />}
+              {tab === 'admins' && isAdmin && <Administradores />}
             </main>
           </>
         )}

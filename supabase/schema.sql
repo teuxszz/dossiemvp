@@ -37,17 +37,77 @@ create trigger trg_colaboradores_updated_at
   before update on public.colaboradores
   for each row execute function public.set_updated_at();
 
--- 3. RLS — leitura pública (MVP). Para RH real, exija autenticação.
+-- 3. Login por email/senha (Supabase Auth) ----------------------------------
+-- Cada colaborador é vinculado a um usuário do Auth pelo e-mail. Crie o
+-- usuário em Authentication > Users (Supabase Dashboard) com esse mesmo
+-- e-mail; a coluna abaixo é só o vínculo, a senha fica no Auth.
+alter table public.colaboradores add column if not exists email text unique;
+
+-- 3.1 Administradores (RH/liderança) — enxergam e editam todos os dossiês.
+create table if not exists public.admins (
+  email      text primary key,
+  criado_em  timestamptz not null default now()
+);
+alter table public.admins enable row level security;
+
+-- Função auxiliar: o e-mail autenticado está na lista de admins?
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.admins where email = auth.jwt() ->> 'email'
+  );
+$$;
+
+drop policy if exists "admins leem a tabela admins" on public.admins;
+create policy "admins leem a tabela admins"
+  on public.admins for select
+  using ( public.is_admin() );
+
+drop policy if exists "admins gerenciam admins" on public.admins;
+create policy "admins gerenciam admins"
+  on public.admins for all
+  using ( public.is_admin() )
+  with check ( public.is_admin() );
+
+-- IMPORTANTE — bootstrap: a policy acima exige já existir um admin para
+-- gerenciar a tabela pela UI. Rode manualmente (uma vez) trocando o e-mail:
+--   insert into public.admins (email) values ('seu-email@consej.com.br')
+--   on conflict (email) do nothing;
+
+-- 3.2 RLS de colaboradores — admin vê/edita tudo; o próprio membro só lê
+--     (e edita campos específicos via as funções da seção 5).
 alter table public.colaboradores enable row level security;
 
 drop policy if exists "leitura publica colaboradores" on public.colaboradores;
-create policy "leitura publica colaboradores"
+drop policy if exists "leitura admin ou proprio dossie" on public.colaboradores;
+create policy "leitura admin ou proprio dossie"
   on public.colaboradores
   for select
-  using ( true );
+  using ( public.is_admin() or email = auth.jwt() ->> 'email' );
+
+drop policy if exists "admin insere colaboradores" on public.colaboradores;
+create policy "admin insere colaboradores"
+  on public.colaboradores for insert
+  with check ( public.is_admin() );
+
+drop policy if exists "admin atualiza colaboradores" on public.colaboradores;
+create policy "admin atualiza colaboradores"
+  on public.colaboradores for update
+  using ( public.is_admin() )
+  with check ( public.is_admin() );
+
+drop policy if exists "admin remove colaboradores" on public.colaboradores;
+create policy "admin remove colaboradores"
+  on public.colaboradores for delete
+  using ( public.is_admin() );
 
 -- 4. Seed --------------------------------------------------------------------
-insert into public.colaboradores (id, nome, cargo, area, matricula, iniciais, acesso_restrito, sso_mfa, dados)
+insert into public.colaboradores (id, nome, cargo, area, matricula, iniciais, acesso_restrito, sso_mfa, email, dados)
 values (
   'carlos-eduardo-menezes',
   'Carlos Eduardo Menezes',
@@ -57,6 +117,7 @@ values (
   'CM',
   true,
   true,
+  'carlos.menezes@consej.com.br',
   $json$
 {
   "kpis": [
@@ -201,4 +262,122 @@ on conflict (id) do update set
   iniciais = excluded.iniciais,
   acesso_restrito = excluded.acesso_restrito,
   sso_mfa = excluded.sso_mfa,
+  email = excluded.email,
   dados = excluded.dados;
+
+-- ============================================================================
+-- 5. Auto-edição do próprio membro (funções SECURITY DEFINER)
+-- ----------------------------------------------------------------------------
+-- Regra: o membro comum só enxerga e nunca edita a linha diretamente (RLS
+-- acima bloqueia update). Estas duas funções são a ÚNICA porta de escrita
+-- liberada pra ele — cada uma só altera os campos explicitamente permitidos
+-- e sempre reduz o alvo à própria linha (email = auth.jwt()->>'email').
+-- ============================================================================
+
+-- 5.1 Perfil básico: celular, e-mail de contato e período do curso.
+create or replace function public.atualizar_perfil_proprio(
+  p_celular       text,
+  p_email_contato text,
+  p_periodo_curso text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_email text := auth.jwt() ->> 'email';
+  v_found boolean;
+begin
+  if v_email is null then
+    raise exception 'Não autenticado.';
+  end if;
+
+  update public.colaboradores
+  set dados = jsonb_set(
+        jsonb_set(
+          jsonb_set(dados, '{perfil,celular}', to_jsonb(coalesce(p_celular, '')), true),
+          '{perfil,email}', to_jsonb(coalesce(p_email_contato, '')), true
+        ),
+        '{perfil,periodoCurso}', to_jsonb(coalesce(p_periodo_curso, '')), true
+      )
+  where email = v_email;
+
+  get diagnostics v_found = row_count;
+  if not v_found then
+    raise exception 'Nenhum dossiê vinculado a este e-mail.';
+  end if;
+end;
+$$;
+
+grant execute on function public.atualizar_perfil_proprio(text, text, text) to authenticated;
+
+-- 5.2 Registrar abono PDAA (ação do catálogo, no ciclo atual).
+create or replace function public.registrar_abono_proprio(
+  p_ano             int,
+  p_ciclo           text,
+  p_tipo             text,
+  p_descricao        text,
+  p_pontos_abonados  int
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_email  text := auth.jwt() ->> 'email';
+  v_id     text;
+  v_dados  jsonb;
+  v_ciclos jsonb;
+  v_idx    int;
+  v_novo   jsonb;
+begin
+  if v_email is null then
+    raise exception 'Não autenticado.';
+  end if;
+
+  select id, dados into v_id, v_dados from public.colaboradores where email = v_email;
+  if v_id is null then
+    raise exception 'Nenhum dossiê vinculado a este e-mail.';
+  end if;
+
+  v_novo := jsonb_build_object(
+    'id', 'ab-' || extract(epoch from clock_timestamp())::bigint::text,
+    'tipo', p_tipo,
+    'descricao', p_descricao,
+    'data', to_char(current_date, 'YYYY-MM-DD'),
+    'pontosAbonados', p_pontos_abonados
+  );
+
+  v_ciclos := coalesce(v_dados #> '{pdaa,abonosPorCiclo}', '[]'::jsonb);
+
+  select i into v_idx
+  from jsonb_array_elements(v_ciclos) with ordinality as e(item, i)
+  where (e.item ->> 'ano')::int = p_ano and e.item ->> 'ciclo' = p_ciclo
+  limit 1;
+
+  if v_idx is null then
+    v_ciclos := v_ciclos || jsonb_build_array(jsonb_build_object(
+      'ano', p_ano, 'ciclo', p_ciclo, 'usados', 1, 'registros', jsonb_build_array(v_novo)
+    ));
+  else
+    v_ciclos := jsonb_set(
+      v_ciclos, array[(v_idx - 1)::text, 'registros'],
+      coalesce(v_ciclos -> (v_idx - 1) -> 'registros', '[]'::jsonb) || jsonb_build_array(v_novo),
+      true
+    );
+    v_ciclos := jsonb_set(
+      v_ciclos, array[(v_idx - 1)::text, 'usados'],
+      to_jsonb(coalesce((v_ciclos -> (v_idx - 1) ->> 'usados')::int, 0) + 1),
+      true
+    );
+  end if;
+
+  update public.colaboradores
+  set dados = jsonb_set(v_dados, '{pdaa,abonosPorCiclo}', v_ciclos, true)
+  where id = v_id;
+end;
+$$;
+
+grant execute on function public.registrar_abono_proprio(int, text, text, text, int) to authenticated;

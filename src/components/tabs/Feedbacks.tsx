@@ -173,9 +173,10 @@ interface Props {
   feedbacks: Feedback[]
   onAddFeedback: (fb: Feedback) => void
   onRemoveFeedback: (id: string) => void
+  isAdmin: boolean
 }
 
-export function Feedbacks({ dossie, feedbacks, onAddFeedback, onRemoveFeedback }: Props) {
+export function Feedbacks({ dossie, feedbacks, onAddFeedback, onRemoveFeedback, isAdmin }: Props) {
   const membroId = dossie.colaborador.id
   const [showForm, setShowForm] = useState(false)
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
@@ -231,16 +232,18 @@ export function Feedbacks({ dossie, feedbacks, onAddFeedback, onRemoveFeedback }
               {feedbacks.length}
             </span>
           </SectionTitle>
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand/90"
-          >
-            {showForm ? <X size={13} /> : <Plus size={13} />}
-            {showForm ? 'Cancelar' : 'Adicionar'}
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowForm((v) => !v)}
+              className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand/90"
+            >
+              {showForm ? <X size={13} /> : <Plus size={13} />}
+              {showForm ? 'Cancelar' : 'Adicionar'}
+            </button>
+          )}
         </div>
 
-        {showForm && (
+        {isAdmin && showForm && (
           <div className="mt-4">
             <AddForm
               onSave={handleSave}
@@ -285,13 +288,15 @@ export function Feedbacks({ dossie, feedbacks, onAddFeedback, onRemoveFeedback }
                               )}
                               <span className="ml-2 text-[11px] text-ink-tertiary">{fb.data}</span>
                             </div>
-                            <button
-                              onClick={() => handleRemove(fb.id)}
-                              className="shrink-0 text-ink-tertiary hover:text-bad"
-                              title="Remover feedback"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleRemove(fb.id)}
+                                className="shrink-0 text-ink-tertiary hover:text-bad"
+                                title="Remover feedback"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
                           </div>
                           <div className="mt-2">
                             <Quote className="mb-1 text-brand" size={16} />

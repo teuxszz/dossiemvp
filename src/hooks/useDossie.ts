@@ -13,6 +13,8 @@ interface UseDossieResult {
   setSelectedId: (id: string | null) => void
   addMembro: (colab: Colaborador) => void
   removeMembro: (id: string) => void
+  /** Resolve o id do dossiê vinculado a um e-mail (mock local ou Supabase). Usado no login do membro comum. */
+  resolveIdByEmail: (email: string) => Promise<string | null>
   loading: boolean
   error: string | null
   source: DataSource
@@ -28,6 +30,7 @@ interface ColaboradorRow {
   iniciais: string
   acesso_restrito: boolean
   sso_mfa: boolean
+  email: string | null
   dados: Omit<Dossie, 'colaborador'>
 }
 
@@ -52,6 +55,7 @@ function rowToDossie(row: ColaboradorRow): Dossie {
       iniciais: row.iniciais,
       acessoRestrito: row.acesso_restrito,
       ssoMfa: row.sso_mfa,
+      email: row.email ?? undefined,
     },
   }
 }
@@ -147,6 +151,30 @@ export function useDossie(): UseDossieResult {
     setExtras(updated)
     saveExtras(updated)
     setSelectedId(colab.id)
+
+    // Best-effort: também persiste no Supabase (quando configurado), pra que o
+    // e-mail do novo membro já fique vinculável a um login real. Se falhar
+    // (ex.: id/e-mail duplicado), o membro segue disponível localmente.
+    if (supabase) {
+      const { colaborador: _c, ...dados } = novo
+      supabase
+        .from('colaboradores')
+        .insert({
+          id: colab.id,
+          nome: colab.nome,
+          cargo: colab.cargo,
+          area: colab.area,
+          matricula: colab.matricula,
+          iniciais: colab.iniciais,
+          acesso_restrito: colab.acessoRestrito,
+          sso_mfa: colab.ssoMfa,
+          email: colab.email || null,
+          dados,
+        })
+        .then(({ error: err }) => {
+          if (err) console.warn('Não foi possível salvar o novo membro no Supabase:', err.message)
+        })
+    }
   }
 
   function removeMembro(id: string) {
@@ -158,5 +186,26 @@ export function useDossie(): UseDossieResult {
     saveExtras(updated)
   }
 
-  return { dossie, membros, allDossies: allMock, selectedId, setSelectedId, addMembro, removeMembro, loading, error, source }
+  async function resolveIdByEmail(email: string): Promise<string | null> {
+    const local = allMock.find((d) => d.colaborador.email === email)
+    if (local) return local.colaborador.id
+    if (!supabase) return null
+    // RLS já restringe: um membro comum só enxerga a própria linha.
+    const { data } = await supabase.from('colaboradores').select('id').eq('email', email).maybeSingle()
+    return (data as { id: string } | null)?.id ?? null
+  }
+
+  return {
+    dossie,
+    membros,
+    allDossies: allMock,
+    selectedId,
+    setSelectedId,
+    addMembro,
+    removeMembro,
+    resolveIdByEmail,
+    loading,
+    error,
+    source,
+  }
 }

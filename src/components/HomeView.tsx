@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft } from 'lucide-react'
+import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut } from 'lucide-react'
 import { cn } from '@/lib/ui'
 import { TeamDashboard } from './TeamDashboard'
 import type { Colaborador, Dossie } from '@/lib/types'
@@ -97,6 +97,7 @@ interface NovoMembroForm {
   cargo: string
   area: string
   iniciais: string
+  email: string
 }
 
 function gerarIniciais(nome: string) {
@@ -118,9 +119,10 @@ interface Props {
   onRemoveMembro: (id: string) => void
   theme: 'light' | 'dark'
   onToggleTheme: () => void
+  onSignOut?: () => void
 }
 
-export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, theme, onToggleTheme }: Props) {
+export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, theme, onToggleTheme, onSignOut }: Props) {
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'membros' | 'dashboard'>('membros')
   const [busca, setBusca] = useState('')
@@ -139,7 +141,7 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
 
   const [filtroDiretoria, setFiltroDiretoria] = useState<string>('todas')
   const [showNovo, setShowNovo] = useState(false)
-  const [form, setForm] = useState<NovoMembroForm>({ nome: '', cargo: '', area: DIRETORIAS[0], iniciais: '' })
+  const [form, setForm] = useState<NovoMembroForm>({ nome: '', cargo: '', area: DIRETORIAS[0], iniciais: '', email: '' })
 
   const filtrados = membros.filter((m) => {
     const q = busca.toLowerCase()
@@ -163,9 +165,10 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
       iniciais,
       acessoRestrito: false,
       ssoMfa: false,
+      email: form.email.trim() || undefined,
     }
     onAddMembro(colab)
-    setForm({ nome: '', cargo: '', area: DIRETORIAS[0], iniciais: '' })
+    setForm({ nome: '', cargo: '', area: DIRETORIAS[0], iniciais: '', email: '' })
     setShowNovo(false)
   }
 
@@ -206,6 +209,15 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
             >
               {theme === 'dark' ? '☀' : '☾'}
             </button>
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="rounded-md p-2 text-ink-tertiary hover:bg-bg-secondary hover:text-bad"
+                title="Sair"
+              >
+                <LogOut size={15} />
+              </button>
+            )}
             {activeTab === 'membros' && (
               <button
                 onClick={() => setShowNovo(true)}
@@ -299,6 +311,22 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                     className="w-full rounded-lg border border-line bg-bg-secondary px-3 py-2 text-sm text-ink-primary focus:border-brand focus:outline-none"
                     autoFocus
                   />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-ink-tertiary">
+                    E-mail de login
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                    placeholder="Ex.: maria.oliveira@consej.com.br"
+                    className="w-full rounded-lg border border-line bg-bg-secondary px-3 py-2 text-sm text-ink-primary focus:border-brand focus:outline-none"
+                  />
+                  <p className="mt-1 text-[10px] text-ink-tertiary">
+                    Vincula este dossiê a um login. Crie o usuário com este e-mail em Authentication →
+                    Users no Supabase.
+                  </p>
                 </div>
                 <div>
                   <label className="mb-1 block text-[11px] text-ink-tertiary">Diretoria</label>

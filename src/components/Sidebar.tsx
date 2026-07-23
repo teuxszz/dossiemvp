@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
-import { LayoutDashboard, IdCard, GitCommitVertical, MessageCircle, Lock, ShieldCheck, ShieldAlert, PackageCheck } from 'lucide-react'
+import { LayoutDashboard, IdCard, GitCommitVertical, MessageCircle, Lock, ShieldCheck, ShieldAlert, PackageCheck, UserCog } from 'lucide-react'
 import { cn } from '@/lib/ui'
 
-export type TabKey = 'dashboard' | 'perfil' | 'pdaa' | 'historico' | 'feedbacks' | 'entregas' | 'seguranca'
+export type TabKey = 'dashboard' | 'perfil' | 'pdaa' | 'historico' | 'feedbacks' | 'entregas' | 'seguranca' | 'admins'
 
 const NAV: { key: TabKey; label: string; icon: ReactNode }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={17} /> },
@@ -14,7 +14,12 @@ const NAV: { key: TabKey; label: string; icon: ReactNode }[] = [
   { key: 'seguranca', label: 'Segurança', icon: <Lock size={17} /> },
 ]
 
-export function Sidebar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => void }) {
+const NAV_ADMIN: { key: TabKey; label: string; icon: ReactNode } = {
+  key: 'admins', label: 'Administradores', icon: <UserCog size={17} />,
+}
+
+export function Sidebar({ active, onChange, isAdmin }: { active: TabKey; onChange: (t: TabKey) => void; isAdmin: boolean }) {
+  const items = isAdmin ? [...NAV, NAV_ADMIN] : NAV
   return (
     <aside className="flex shrink-0 flex-col gap-1 border-line bg-sidebar text-sidebar-fg md:h-screen md:w-60 md:border-r md:sticky md:top-0">
       {/* Marca — topo esquerdo */}
@@ -23,14 +28,14 @@ export function Sidebar({ active, onChange }: { active: TabKey; onChange: (t: Ta
           <ShieldCheck size={18} />
         </div>
         <div className="leading-tight">
-          <div className="text-[15px] font-semibold tracking-tight text-white">CONSEJ</div>
-          <div className="text-[11px] text-sidebar-fg">Dossiê Individual</div>
+          <div className="font-display text-[15px] font-semibold tracking-tight text-white">CONSEJ</div>
+          <div className="text-[11px] text-sidebar-fg">{isAdmin ? 'Dossiê Individual' : 'Meu dossiê'}</div>
         </div>
       </div>
 
       {/* Navegação vertical (vira horizontal com scroll no mobile) */}
       <nav className="flex gap-1 overflow-x-auto px-3 py-3 md:flex-col md:overflow-visible">
-        {NAV.map((item) => (
+        {items.map((item) => (
           <button
             key={item.key}
             onClick={() => onChange(item.key)}
