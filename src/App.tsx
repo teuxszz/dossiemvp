@@ -315,7 +315,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
 
   return (
     <div className="flex min-h-screen flex-col bg-bg-tertiary md:flex-row">
-      <Sidebar active={tab} onChange={setTab} isAdmin={isAdmin} />
+      <Sidebar active={tab} onChange={setTab} isAdmin={isAdmin} cicloAtual={cicloAtual} />
 
       <div className="min-w-0 flex-1">
         {error && (

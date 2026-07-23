@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { LayoutDashboard, IdCard, GitCommitVertical, MessageCircle, Lock, ShieldCheck, ShieldAlert, PackageCheck } from 'lucide-react'
+import { LayoutDashboard, IdCard, GitCommitVertical, MessageCircle, Lock, ShieldCheck, ShieldAlert, PackageCheck, CalendarClock } from 'lucide-react'
 import { cn } from '@/lib/ui'
 
 export type TabKey = 'dashboard' | 'perfil' | 'pdaa' | 'historico' | 'feedbacks' | 'entregas' | 'seguranca'
@@ -14,7 +14,7 @@ const NAV: { key: TabKey; label: string; icon: ReactNode }[] = [
   { key: 'seguranca', label: 'Segurança', icon: <Lock size={17} /> },
 ]
 
-export function Sidebar({ active, onChange, isAdmin }: { active: TabKey; onChange: (t: TabKey) => void; isAdmin: boolean }) {
+export function Sidebar({ active, onChange, isAdmin, cicloAtual }: { active: TabKey; onChange: (t: TabKey) => void; isAdmin: boolean; cicloAtual: { ano: number; ciclo: string } }) {
   const items = NAV
   return (
     <aside className="flex shrink-0 flex-col gap-1 border-line bg-sidebar text-sidebar-fg md:h-screen md:w-60 md:border-r md:sticky md:top-0">
@@ -27,6 +27,13 @@ export function Sidebar({ active, onChange, isAdmin }: { active: TabKey; onChang
           <div className="font-display text-[15px] font-semibold tracking-tight text-white">CONSEJ</div>
           <div className="text-[11px] text-sidebar-fg">{isAdmin ? 'Dossiê Individual' : 'Meu dossiê'}</div>
         </div>
+      </div>
+
+      {/* Ciclo ativo — bem visível, canto superior esquerdo */}
+      <div className="px-5 pt-3">
+        <span className="flex w-fit items-center gap-1.5 rounded-full border border-brand/40 bg-brand/15 px-3 py-1 text-xs font-semibold text-brand">
+          <CalendarClock size={13} /> {cicloAtual.ano} · {cicloAtual.ciclo}
+        </span>
       </div>
 
       {/* Navegação vertical (vira horizontal com scroll no mobile) */}

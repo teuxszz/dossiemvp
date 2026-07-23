@@ -212,6 +212,12 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
               <h1 className="text-[15px] font-semibold text-ink-primary">Dossiê CONSEJ</h1>
               <p className="text-[11px] text-ink-tertiary">{membros.length} membro{membros.length !== 1 ? 's' : ''} cadastrado{membros.length !== 1 ? 's' : ''}</p>
             </div>
+            <span
+              className="flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand"
+              title="Ciclo ativo — mude na aba Ciclos"
+            >
+              <CalendarClock size={13} /> {cicloGlobal.cicloGlobal.ano} · {cicloGlobal.cicloGlobal.ciclo}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {/* Tabs */}

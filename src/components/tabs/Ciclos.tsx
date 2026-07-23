@@ -11,9 +11,16 @@ interface Props {
 export function Ciclos({ cicloGlobal }: Props) {
   const { cicloGlobal: atual, anosFechados, selecionarCiclo, podeAvancarAno, confirmarVirarAno } = cicloGlobal
   const [confirmando, setConfirmando] = useState(false)
+  const [pendente, setPendente] = useState<CicloTag | null>(null)
 
-  function trocar(ciclo: CicloTag) {
-    selecionarCiclo(ciclo)
+  function pedirTroca(ciclo: CicloTag) {
+    if (ciclo === atual.ciclo) return
+    setPendente(ciclo)
+  }
+
+  function confirmarTroca() {
+    if (pendente) selecionarCiclo(pendente)
+    setPendente(null)
   }
 
   function avancar() {
@@ -23,6 +30,34 @@ export function Ciclos({ cicloGlobal }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Pop-up de confirmação ao trocar de ciclo dentro do mesmo ano */}
+      {pendente && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-line bg-bg-primary p-6 shadow-xl">
+            <div className="mb-1 flex items-center gap-2 text-brand">
+              <CalendarClock size={16} />
+              <span className="text-[15px] font-semibold">Trocar ciclo ativo</span>
+            </div>
+            <p className="mt-2 text-sm text-ink-secondary">
+              Você está prestes a mudar o ciclo ativo de <strong className="text-ink-primary">{atual.ciclo}</strong> para{' '}
+              <strong className="text-ink-primary">{pendente}</strong> ({atual.ano}). Isso muda o período padrão de
+              edição de KPIs, PDAA e abonos em todos os dossiês. Confirma?
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setPendente(null)} className="rounded-lg border border-line px-4 py-2 text-sm text-ink-secondary hover:text-ink-primary">
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarTroca}
+                className="flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90"
+              >
+                <Check size={13} /> Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Card className="p-4 sm:p-5">
         <SectionTitle icon={<CalendarClock size={15} />}>Ciclo ativo</SectionTitle>
         <p className="mt-1 text-xs text-ink-secondary">
@@ -36,7 +71,7 @@ export function Ciclos({ cicloGlobal }: Props) {
             {CICLOS.map((c) => (
               <button
                 key={c}
-                onClick={() => trocar(c)}
+                onClick={() => pedirTroca(c)}
                 className={cn(
                   'rounded-md px-4 py-2 text-sm font-semibold transition-colors',
                   atual.ciclo === c ? 'bg-brand text-white shadow-card' : 'text-ink-tertiary hover:text-ink-primary',
