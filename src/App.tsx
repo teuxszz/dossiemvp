@@ -238,6 +238,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
           <>
             <Header
               colaborador={dossie.colaborador}
+              dossie={dossie}
               onBack={onBack}
               theme={theme}
               onToggleTheme={onToggleTheme}

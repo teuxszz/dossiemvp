@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard } from 'lucide-react'
+import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/ui'
 import { TeamDashboard } from './TeamDashboard'
 import type { Colaborador, Dossie } from '@/lib/types'
@@ -55,6 +55,17 @@ export const CARGOS_POR_DIRETORIA: Record<string, string[]> = {
     'Coordenadoria de Inbound Marketing',
     'Coordenadoria de Social Media',
   ],
+}
+
+const LS_HIDDEN = 'dossie_membros_ocultos'
+
+function carregarOcultos(): Set<string> {
+  try {
+    const raw: string[] = JSON.parse(localStorage.getItem(LS_HIDDEN) ?? '[]')
+    return new Set(raw)
+  } catch {
+    return new Set()
+  }
 }
 
 const CORES_INICIAIS = [
@@ -113,6 +124,18 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'membros' | 'dashboard'>('membros')
   const [busca, setBusca] = useState('')
+  const [ocultos, setOcultos] = useState<Set<string>>(() => carregarOcultos())
+  const [pasta, setPasta] = useState<'ativos' | 'pos'>('ativos')
+
+  function alternarOculto(id: string) {
+    setOcultos((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      localStorage.setItem(LS_HIDDEN, JSON.stringify([...next]))
+      return next
+    })
+  }
 
   const [filtroDiretoria, setFiltroDiretoria] = useState<string>('todas')
   const [showNovo, setShowNovo] = useState(false)
@@ -122,7 +145,8 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
     const q = busca.toLowerCase()
     const matchBusca = !q || m.nome.toLowerCase().includes(q) || m.cargo.toLowerCase().includes(q) || m.area.toLowerCase().includes(q)
     const matchDir = filtroDiretoria === 'todas' || m.area === filtroDiretoria
-    return matchBusca && matchDir
+    const matchPasta = pasta === 'pos' ? ocultos.has(m.id) : !ocultos.has(m.id)
+    return matchBusca && matchDir && matchPasta
   })
 
   const diretorias = ['todas', ...Array.from(new Set(membros.map((m) => m.area))).sort()]
@@ -222,7 +246,35 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
               <option key={d} value={d}>{d}</option>
             ))}
           </select>
+          {pasta === 'ativos' ? (
+            <button
+              onClick={() => setPasta('pos')}
+              className="flex items-center gap-1.5 rounded-lg border border-line bg-bg-primary px-3 py-2 text-sm text-ink-primary hover:border-brand/40"
+              title="Abrir pasta Pós-juniores"
+            >
+              <FolderClosed size={14} className="text-brand" />
+              Pós-juniores
+              <span className="ml-1 rounded-md bg-brand/15 px-1.5 py-0.5 text-[11px] font-semibold text-brand">
+                {ocultos.size}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setPasta('ativos')}
+              className="flex items-center gap-1.5 rounded-lg border border-line bg-bg-primary px-3 py-2 text-sm text-ink-primary hover:border-brand/40"
+            >
+              <ArrowLeft size={14} /> Voltar aos membros
+            </button>
+          )}
         </div>
+
+        {pasta === 'pos' && (
+          <div className="flex items-center gap-2 text-sm text-ink-tertiary">
+            <FolderClosed size={14} className="text-brand" />
+            <span className="font-semibold text-ink-primary">Pasta: Pós-juniores</span>
+            <span>· membros ocultos do painel principal</span>
+          </div>
+        )}
 
         {/* Modal criar membro */}
         {showNovo && (
@@ -337,9 +389,11 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
         {/* Grid de membros */}
         {filtrados.length === 0 ? (
           <div className="py-16 text-center text-sm text-ink-tertiary">
-            {busca || filtroDiretoria !== 'todas'
-              ? 'Nenhum membro encontrado com esse filtro.'
-              : 'Nenhum membro cadastrado ainda.'}
+            {pasta === 'pos'
+              ? 'Nenhum membro em Pós-juniores.'
+              : busca || filtroDiretoria !== 'todas'
+                ? 'Nenhum membro encontrado com esse filtro.'
+                : 'Nenhum membro cadastrado ainda.'}
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -358,13 +412,22 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                     <p className="mt-1 truncate text-[10px] text-ink-tertiary">{m.area}</p>
                   </div>
                 </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setConfirmRemove(m.id) }}
-                  className="absolute right-3 top-3 rounded-md p-1.5 text-ink-tertiary opacity-0 transition-opacity hover:bg-bad-soft hover:text-bad group-hover:opacity-100"
-                  title="Remover membro"
-                >
-                  <Trash2 size={13} />
-                </button>
+                <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); alternarOculto(m.id) }}
+                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-brand/15 hover:text-brand"
+                    title={ocultos.has(m.id) ? 'Restaurar ao painel' : 'Mover para Pós-juniores'}
+                  >
+                    {ocultos.has(m.id) ? <Eye size={13} /> : <EyeOff size={13} />}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setConfirmRemove(m.id) }}
+                    className="rounded-md p-1.5 text-ink-tertiary hover:bg-bad-soft hover:text-bad"
+                    title="Remover membro"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -1,11 +1,13 @@
 import { ChevronLeft, Download, Sparkles, Sun, Moon, Database, FlaskConical } from 'lucide-react'
 import { cn } from '@/lib/ui'
-import type { Colaborador } from '@/lib/types'
+import type { Colaborador, Dossie } from '@/lib/types'
 import type { DataSource } from '@/hooks/useDossie'
 import { FarolBadge } from './Farol'
+import { farolDe } from '@/lib/pdaa'
 
 interface Props {
   colaborador: Colaborador
+  dossie: Dossie
   onBack: () => void
   theme: 'light' | 'dark'
   onToggleTheme: () => void
@@ -13,7 +15,32 @@ interface Props {
   pontosPdaa: number
 }
 
-export function Header({ colaborador, onBack, theme, onToggleTheme, source, pontosPdaa }: Props) {
+export function Header({ colaborador, dossie, onBack, theme, onToggleTheme, source, pontosPdaa }: Props) {
+  const farol = farolDe(pontosPdaa)
+
+  function exportarJson() {
+    const blob = new Blob([JSON.stringify(dossie, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `dossie-${colaborador.id}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function analiseIa() {
+    const kpisTxt = dossie.kpis.map((k) => `${k.label} ${k.value}%`).join(' · ')
+    alert(
+      `Análise IA — ${colaborador.nome}\n\n` +
+        `Farol atual: ${farol.label} (${pontosPdaa} pts).\n${kpisTxt}\n\n` +
+        `Recomendação: ${
+          farol.nivel === 'azul'
+            ? 'Manter cadência atual e considerar plano de sucessão.'
+            : 'Iniciar plano de desenvolvimento personalizado com feedback semanal.'
+        }`,
+    )
+  }
+
   return (
     <header className="border-b border-line bg-bg-primary px-4 py-4 sm:px-6">
       <div className="flex items-center gap-3">
@@ -63,10 +90,16 @@ export function Header({ colaborador, onBack, theme, onToggleTheme, source, pont
             {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
           </button>
 
-          <button className="hidden items-center gap-1.5 rounded-md border border-line bg-bg-secondary px-3 py-1.5 text-xs text-ink-secondary hover:text-ink-primary sm:inline-flex">
+          <button
+            onClick={exportarJson}
+            className="hidden items-center gap-1.5 rounded-md border border-line bg-bg-secondary px-3 py-1.5 text-xs text-ink-secondary hover:text-ink-primary sm:inline-flex"
+          >
             <Download size={13} /> Exportar
           </button>
-          <button className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-dark">
+          <button
+            onClick={analiseIa}
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-dark"
+          >
             <Sparkles size={13} /> Análise IA
           </button>
         </div>
