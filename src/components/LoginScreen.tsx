@@ -97,7 +97,7 @@ export function LoginScreen({ onSignIn, onSignUp, onResetPassword, error }: Prop
 
           {/* Saudação */}
           <div>
-            <div className="eyebrow text-brand">Hub CONSEJ</div>
+            <div className="eyebrow text-brand">Painel de Desempenho dos Membros</div>
             <h1 className="mt-2 font-display text-4xl font-bold leading-tight text-white">
               Bem-vindo,
               <br />
@@ -255,7 +255,7 @@ export function LoginScreen({ onSignIn, onSignUp, onResetPassword, error }: Prop
           </div>
 
           <p className="mt-6 text-center text-[11px] text-ink-tertiary">
-            Problemas para acessar? Fale com a Diretoria de Pesquisas e Pessoas.
+            Problemas para acessar? Fale com a Diretoria de Pesquisas e Pessoas ou a Coordenadoria de Inovação.
           </p>
         </div>
       </div>
