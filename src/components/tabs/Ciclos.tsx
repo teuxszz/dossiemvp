@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CalendarClock, Lock, AlertTriangle, Check, X, Users, ShieldCheck } from 'lucide-react'
+import { CalendarClock, Lock, AlertTriangle, Check, X, Users, ShieldCheck, ArrowLeftCircle } from 'lucide-react'
 import { Card, SectionTitle } from '../Card'
 import { cn } from '@/lib/ui'
 import { CICLOS, type CicloTag, type UseCicloGlobal } from '@/hooks/useCicloGlobal'
@@ -9,8 +9,9 @@ interface Props {
 }
 
 export function Ciclos({ cicloGlobal }: Props) {
-  const { cicloGlobal: atual, anosFechados, selecionarCiclo, podeAvancarAno, confirmarVirarAno } = cicloGlobal
+  const { cicloGlobal: atual, anosFechados, selecionarCiclo, podeAvancarAno, confirmarVirarAno, podeVoltarAno, confirmarVoltarAno, estaNoPassado, voltarParaAtual } = cicloGlobal
   const [confirmando, setConfirmando] = useState(false)
+  const [confirmandoVolta, setConfirmandoVolta] = useState(false)
   const [pendente, setPendente] = useState<CicloTag | null>(null)
 
   function pedirTroca(ciclo: CicloTag) {
@@ -26,6 +27,11 @@ export function Ciclos({ cicloGlobal }: Props) {
   function avancar() {
     confirmarVirarAno()
     setConfirmando(false)
+  }
+
+  function voltar() {
+    confirmarVoltarAno()
+    setConfirmandoVolta(false)
   }
 
   return (
@@ -64,6 +70,18 @@ export function Ciclos({ cicloGlobal }: Props) {
           Define o ciclo (C1–C4) que o painel usa por padrão em todos os dossiês — KPIs, PDAA e abonos do ciclo
           corrente. Alternar aqui não muda dados antigos, só qual período fica "aberto" pra edição.
         </p>
+
+        {estaNoPassado && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2">
+            <span className="text-xs text-ink-secondary">Você está navegando pelo histórico — este período está só leitura.</span>
+            <button
+              onClick={voltarParaAtual}
+              className="shrink-0 rounded-md bg-brand px-2.5 py-1 text-[11px] font-medium text-white hover:bg-brand/90"
+            >
+              Voltar para o ciclo atual
+            </button>
+          </div>
+        )}
 
         <div className="mt-4 flex items-center gap-4">
           <div className="font-display text-4xl font-bold text-brand">{atual.ano}</div>
@@ -110,6 +128,41 @@ export function Ciclos({ cicloGlobal }: Props) {
                       <Check size={12} /> Confirmar
                     </button>
                     <button onClick={() => setConfirmando(false)} className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-ink-secondary hover:text-ink-primary">
+                      <X size={12} /> Cancelar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {podeVoltarAno && (
+          <div className="mt-4 rounded-lg border border-line bg-bg-secondary p-4">
+            <div className="flex items-start gap-2">
+              <ArrowLeftCircle size={15} className="mt-0.5 shrink-0 text-ink-tertiary" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-ink-primary">
+                  {atual.ano - 1} está fechado — dá pra visualizar
+                </p>
+                <p className="mt-0.5 text-xs text-ink-secondary">
+                  Voltar pra {atual.ano - 1} C4 só navega pra visualização — o padrão continua o mesmo dos gráficos
+                  e KPIs de qualquer outro ciclo, só que somente leitura. Cargos de liderança não são alterados.
+                </p>
+                {!confirmandoVolta ? (
+                  <button
+                    onClick={() => setConfirmandoVolta(true)}
+                    className="mt-3 flex items-center gap-1.5 rounded-lg border border-line bg-bg-primary px-3 py-1.5 text-xs font-medium text-ink-secondary hover:text-ink-primary"
+                  >
+                    <ArrowLeftCircle size={12} /> Voltar para {atual.ano - 1} C4
+                  </button>
+                ) : (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-medium text-ink-primary">Confirma ir para {atual.ano - 1} C4?</span>
+                    <button onClick={voltar} className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand/90">
+                      <Check size={12} /> Confirmar
+                    </button>
+                    <button onClick={() => setConfirmandoVolta(false)} className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-ink-secondary hover:text-ink-primary">
                       <X size={12} /> Cancelar
                     </button>
                   </div>

@@ -133,6 +133,10 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
   const [editCargo, setEditCargo] = useState<Membro | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'membros' | 'dashboard' | 'ciclos' | 'administradores'>('membros')
+
+  // Ano fechado (avançado ou visto pelo histórico) — só dá pra excluir/arquivar
+  // membro, nada de criar ou trocar cargo, pra não bagunçar o quadro congelado.
+  const quadroBloqueado = cicloGlobal.anoEstaFechado(cicloGlobal.cicloGlobal.ano)
   const [busca, setBusca] = useState('')
   const [ocultos, setOcultos] = useState<Set<string>>(() => carregarOcultos())
   const [pasta, setPasta] = useState<'ativos' | 'pos'>('ativos')
@@ -263,7 +267,7 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                 <LogOut size={15} />
               </button>
             )}
-            {activeTab === 'membros' && (
+            {activeTab === 'membros' && !quadroBloqueado && (
               <button
                 onClick={() => setShowNovo(true)}
                 className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand/90"
@@ -286,6 +290,12 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
         {activeTab === 'administradores' && <Administradores />}
 
         {activeTab === 'membros' && <>
+        {quadroBloqueado && (
+          <div className="rounded-lg border border-warn/30 bg-warn/5 px-3 py-2 text-xs text-warn">
+            Ciclo {cicloGlobal.cicloGlobal.ano} {cicloGlobal.cicloGlobal.ciclo} está congelado — só dá pra excluir ou
+            mover membros pra Pós-juniores aqui. Criar membro e editar cargo voltam a funcionar no ciclo atual.
+          </div>
+        )}
         {/* Barra de busca e filtro */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
@@ -511,6 +521,7 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                       onRemove={() => setConfirmRemove(m.id)}
                       onSelect={() => onSelect(m.id)}
                       onEdit={() => setEditCargo(m)}
+                      podeEditar={!quadroBloqueado}
                     />
                   ))}
                 </div>
@@ -528,6 +539,7 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                 onRemove={() => setConfirmRemove(m.id)}
                 onSelect={() => onSelect(m.id)}
                 onEdit={() => setEditCargo(m)}
+                podeEditar={!quadroBloqueado}
               />
             ))}
           </div>
@@ -682,6 +694,7 @@ function MembroCard({
   onRemove,
   onSelect,
   onEdit,
+  podeEditar,
 }: {
   m: Membro
   oculto: boolean
@@ -689,6 +702,7 @@ function MembroCard({
   onRemove: () => void
   onSelect: () => void
   onEdit: () => void
+  podeEditar: boolean
 }) {
   return (
     <div className="group relative">
@@ -714,6 +728,7 @@ function MembroCard({
         </div>
       </button>
       <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {podeEditar && (
         <button
           onClick={(e) => { e.stopPropagation(); onEdit() }}
           className="rounded-md p-1.5 text-ink-tertiary hover:bg-brand/15 hover:text-brand"
@@ -721,6 +736,7 @@ function MembroCard({
         >
           <Pencil size={13} />
         </button>
+        )}
         <button
           onClick={(e) => { e.stopPropagation(); onToggleOculto() }}
           className="rounded-md p-1.5 text-ink-tertiary hover:bg-brand/15 hover:text-brand"
