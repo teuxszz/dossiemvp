@@ -390,6 +390,56 @@ export const MOCK_MEMBROS: Dossie[] = [
     { ano: 2026, ciclo: 'C1', engajamento: 77, pco: 65, pdaa: 0, entregas: 80 },
     { ano: 2026, ciclo: 'C2', engajamento: 80, pco: 67, pdaa: 0, entregas: 83 },
   ]),
+
+  // ---- Quadro completo importado do organograma — sem dados de desempenho ainda ----
+
+  // Diretoria executiva
+  membro('ana-luiza-medeiros', 'Ana Luiza Cortez de Medeiros', 'Presidente Executivo', 'Diretoria de Presidência', 'AL', ''),
+  membro('gabi-domingues', 'Gabi Domingues', 'Vice-Presidente', 'Diretoria de Vice-Presidência', 'GD', ''),
+  membro('luna-cavalcanti', 'Luna Cavalcanti Ferreira de Melo', 'Diretor(a) de Negócios', 'Diretoria de Negócios', 'LC', ''),
+
+  // Gerência
+  membro('camila-pereira', 'Camila Silveira de Medeiros Pereira', 'Gerente de Marketing', 'Diretoria de Marketing', 'CS', ''),
+  membro('davi-costa', 'Davi Gonçalves da Costa', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'DG', ''),
+  membro('isabela-barros', 'Isabela Fasanaro Barros', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'IF', ''),
+  membro('jose-arthur-paiva', 'José Arthur Nunes Amaral de Paiva', 'Gerente de Demandas', 'Diretoria de Demandas', 'JA', ''),
+  membro('maria-fernanda-silva', 'Maria Fernanda Lima Souza e Silva', 'Gerente de Demandas', 'Diretoria de Demandas', 'MF', ''),
+  membro('maria-isabel-dorini', 'Maria Isabel Miranda Bertoncini Dorini', 'Gerente de Demandas', 'Diretoria de Demandas', 'MI', ''),
+  membro('maria-julia-dantas', 'Maria Julia Dantas', 'Gerente de Negócios', 'Diretoria de Negócios', 'MJ', ''),
+  membro('matheus-cunha', 'Matheus Fonseca da Cunha', 'Gerente de Presidência', 'Diretoria de Presidência', 'MF', ''),
+  membro('ruan-moura', 'Ruan Hagno de Assis Moura', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'RH', ''),
+
+  // Coordenadoria de Demandas
+  membro('andre-mendonca', 'André Mendonça', 'Coordenadoria de Clientes', 'Diretoria de Demandas', 'AM', ''),
+  membro('arthur-nunes', 'Arthur Maia Nunes', 'Coordenadoria de Procedimentos Internos', 'Diretoria de Demandas', 'AM', ''),
+  membro('gustavo-henrique', 'Gustavo Henrique', 'Coordenadoria de Procedimentos Internos', 'Diretoria de Demandas', 'GH', ''),
+
+  // Coordenadoria de Marketing
+  membro('ana-carolina-oliveira', 'Ana Carolina Azevedo Oliveira', 'Coordenadoria de Social Media', 'Diretoria de Marketing', 'AC', ''),
+  membro('fernanda-amorim', 'Fernanda Sâmara Rodrigues Amorim', 'Coordenadoria de Inbound Marketing', 'Diretoria de Marketing', 'FS', ''),
+  membro('valentina-vicioli', 'Valentina Vanzato Vicioli', 'Coordenadoria de Social Media', 'Diretoria de Marketing', 'VV', ''),
+
+  // Coordenadoria de Negócios
+  membro('hebert-rego', 'Hebert Vinícius Santos Rêgo', 'Growth', 'Diretoria de Negócios', 'HV', ''),
+  membro('joao-felipe-sa', 'João Felipe rosas de Sá', 'Closer', 'Diretoria de Negócios', 'JF', ''),
+  membro('larissa-vale', 'Larissa da Fonte Porto Carreiro de Lima Vale', 'Closer', 'Diretoria de Negócios', 'LD', ''),
+  membro('millena-moncores', 'Millena Corrêa Monçores', 'Growth', 'Diretoria de Negócios', 'MC', ''),
+
+  // Coordenadoria de Pesquisas e Pessoas
+  membro('guilherme-chaves-silva', 'Guilherme Chaves Lopes de Lima e Silva', 'Coordenadoria de Experiência do Time', 'Diretoria de Pesquisas e Pessoas', 'GC', ''),
+  membro('lara-barros', 'Lara Gomes Pereira Barros', 'Coordenadoria de Experiência do Time', 'Diretoria de Pesquisas e Pessoas', 'LG', ''),
+
+  // Coordenadoria de Presidência
+  membro('joao-vitor-silva', 'João Vitor Pessoa Silva', 'Coordenadoria de Parcerias', 'Diretoria de Presidência', 'JV', ''),
+  membro('julia-monte', 'Júlia Silva do Monte', 'Coordenadoria de Parcerias', 'Diretoria de Presidência', 'JS', ''),
+  membro('kelvin-watson', 'Kelvin Watson', 'Coordenadoria de Operações', 'Diretoria de Presidência', 'KW', ''),
+  membro('lucas-holanda-souza', 'Lucas Holanda Campelo Martins de Souza', 'Coordenadoria de Operações', 'Diretoria de Presidência', 'LH', ''),
+
+  // Coordenadoria de Vice-Presidência
+  membro('gabriel-araujo', 'Gabriel Araujo', 'Coordenadoria de Finanças', 'Diretoria de Vice-Presidência', 'GA', ''),
+  membro('ivyson-melo', 'Ivyson Henrique Oliveira Melo', 'Coordenadoria de Estratégia', 'Diretoria de Vice-Presidência', 'IH', ''),
+  membro('leticia-caldas', 'Leticia Gomes Maia Caldas', 'Coordenadoria de Estratégia', 'Diretoria de Vice-Presidência', 'LG', ''),
+  membro('mateus-almeida', 'Mateus Oliveira de Almeida', 'Coordenadoria de Inovação', 'Diretoria de Vice-Presidência', 'MO', ''),
 ]
 
 // Computa a média real de KPIs do time a partir de todos os dossiês.
