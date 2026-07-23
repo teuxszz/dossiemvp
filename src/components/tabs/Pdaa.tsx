@@ -39,6 +39,7 @@ interface Props {
   snapshots: SnapshotCiclo[]
   isAdmin: boolean
   currentEmail: string | null
+  cicloFechado: boolean
 }
 
 function formatDate(iso: string) {
@@ -52,7 +53,7 @@ function cicloFechadoHoje(config: ConfigCiclo | null, cicloAtual: { ano: number;
   return config.cicloRef === ref && new Date(config.dataFechamento) <= new Date()
 }
 
-export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, configCiclo, onSalvarConfig, onFecharCiclo, snapshots, isAdmin, currentEmail }: Props) {
+export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, configCiclo, onSalvarConfig, onFecharCiclo, snapshots, isAdmin, currentEmail, cicloFechado }: Props) {
   const [abonoSalvando, setAbonoSalvando] = useState(false)
   const [abonoErro, setAbonoErro] = useState<string | null>(null)
   const [showPicker, setShowPicker] = useState(false)
@@ -205,12 +206,14 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
           <div className="mt-3 border-t border-line pt-3">
             <div className="mb-1.5 flex items-center justify-between text-[11px]">
               <span className="font-medium text-ink-tertiary">Registrados — {cicloAtual.ciclo} {cicloAtual.ano}</span>
-              <button
-                onClick={() => setShowAddAbono((v) => !v)}
-                className="flex items-center gap-1 text-brand hover:opacity-80"
-              >
-                <Plus size={11} /> Adicionar
-              </button>
+              {!cicloFechado && (
+                <button
+                  onClick={() => setShowAddAbono((v) => !v)}
+                  className="flex items-center gap-1 text-brand hover:opacity-80"
+                >
+                  <Plus size={11} /> Adicionar
+                </button>
+              )}
             </div>
 
             {showAddAbono && (
@@ -286,7 +289,7 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
                     <span className={cn('rounded px-1.5 py-0.5', toneBadge.good)}>{ua.pontosAbonados}pt</span>
                     <span className="flex-1 text-ink-secondary truncate">{ua.tipo}</span>
                     <span className="shrink-0 text-ink-tertiary">{ua.data}</span>
-                    {isAdmin && (
+                    {isAdmin && !cicloFechado && (
                       <button onClick={() => setAbonosAtual((p) => p.filter((a) => a.id !== ua.id))} className="text-ink-tertiary hover:text-bad">
                         <Trash2 size={11} />
                       </button>
@@ -451,7 +454,7 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between">
           <SectionTitle icon={<ShieldAlert size={15} />}>Registro de condutas — {cicloAtual.ano} {cicloAtual.ciclo}</SectionTitle>
-          {isAdmin && (
+          {isAdmin && !cicloFechado && (
           <div className="flex items-center gap-2">
             {/* Config de prazo */}
             <button
@@ -546,14 +549,17 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
           </div>
         )}
 
-        {isAdmin && (
+        {isAdmin && !cicloFechado && (
         <p className="mb-3 mt-3 text-xs text-ink-secondary">
           Escolha uma conduta do catálogo do PDAA. Os pontos somam automaticamente e atualizam o farol em todas as abas.
         </p>
         )}
+        {cicloFechado && (
+          <p className="mb-3 mt-3 text-xs text-ink-tertiary">Ano {cicloAtual.ano} fechado — dados congelados, só leitura.</p>
+        )}
 
         {/* Picker de conduta */}
-        {isAdmin && !snapshotAtual && (
+        {isAdmin && !snapshotAtual && !cicloFechado && (
           <>
             {!showPicker ? (
               <button
@@ -693,7 +699,7 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
                   </p>
                 )}
               </div>
-              {isAdmin && !snapshotAtual && (
+              {isAdmin && !snapshotAtual && !cicloFechado && (
                 <button
                   onClick={() => remover(r.id)}
                   className="shrink-0 rounded-md p-1.5 text-ink-tertiary hover:bg-bad-soft hover:text-bad"

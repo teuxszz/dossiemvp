@@ -6,9 +6,8 @@ import { ShieldAlert, Users, TrendingUp, AlertTriangle } from 'lucide-react'
 import { Card, SectionTitle } from './Card'
 import { farolDe } from '@/lib/pdaa'
 import { cn, toneBadge } from '@/lib/ui'
+import type { UseCicloGlobal } from '@/hooks/useCicloGlobal'
 import type { Dossie, KpiCiclo } from '@/lib/types'
-
-const CICLO_ATUAL = { ano: 2026, ciclo: 'C2' }
 
 const FAROL_CONFIG = {
   azul:     { label: 'Farol Azul',     bg: 'bg-brand/10',  text: 'text-brand', border: 'border-brand/30' },
@@ -43,9 +42,11 @@ function avg(nums: number[]) {
 interface Props {
   allDossies: Dossie[]
   onSelectMembro: (id: string) => void
+  cicloGlobal: UseCicloGlobal
 }
 
-export function TeamDashboard({ allDossies, onSelectMembro }: Props) {
+export function TeamDashboard({ allDossies, onSelectMembro, cicloGlobal }: Props) {
+  const CICLO_ATUAL = cicloGlobal.cicloGlobal
   const [visaoPdaa, setVisaoPdaa] = useState<'membro' | 'diretoria'>('membro')
 
   const stats: MemberStat[] = useMemo(() =>

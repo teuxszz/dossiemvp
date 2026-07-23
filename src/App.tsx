@@ -14,6 +14,7 @@ import { FeedbackForm } from './components/FeedbackForm'
 import { useDossie } from './hooks/useDossie'
 import { useAuth } from './hooks/useAuth'
 import { useTheme } from './hooks/useTheme'
+import { useCicloGlobal, type UseCicloGlobal } from './hooks/useCicloGlobal'
 import { farolDe } from './lib/pdaa'
 import { computeMediaTime } from './lib/mockData'
 import type { Dossie, Feedback, RegistroConduta, EventoTimeline, KpiCiclo, SnapshotCiclo, ConfigCiclo, GrupoTrabalho, ParticipacaoGT, Colaborador } from './lib/types'
@@ -75,6 +76,7 @@ export function App() {
 function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin: boolean; onSignOut: () => void }) {
   const { dossie, membros, allDossies, selectedId, setSelectedId, addMembro, removeMembro, updateMembro, resolveIdByEmail, loading, error, source } = useDossie()
   const { theme, toggle } = useTheme()
+  const cicloGlobal = useCicloGlobal()
   const [resolvingOwn, setResolvingOwn] = useState(false)
   const [ownNotFound, setOwnNotFound] = useState(false)
 
@@ -128,6 +130,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
         currentEmail={email}
         onSignOut={onSignOut}
         onUpdateMembro={updateMembro}
+        cicloGlobal={cicloGlobal}
       />
     )
   }
@@ -144,6 +147,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
         theme={theme}
         onToggleTheme={toggle}
         onSignOut={onSignOut}
+        cicloGlobal={cicloGlobal}
       />
     )
   }
@@ -162,6 +166,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
       currentEmail={email}
       onSignOut={onSignOut}
       onUpdateMembro={updateMembro}
+      cicloGlobal={cicloGlobal}
     />
   )
 }
@@ -180,9 +185,10 @@ interface DossierViewProps {
   currentEmail: string | null
   onSignOut: () => void
   onUpdateMembro: (id: string, patch: Partial<Colaborador>) => void
+  cicloGlobal: UseCicloGlobal
 }
 
-function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack, isAdmin, currentEmail, onSignOut, onUpdateMembro }: DossierViewProps) {
+function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack, isAdmin, currentEmail, onSignOut, onUpdateMembro, cicloGlobal }: DossierViewProps) {
   const mediaTimeKpis = useMemo(() => computeMediaTime(allDossies), [allDossies])
   const [tab, setTab] = useState<TabKey>('dashboard')
 
@@ -192,11 +198,14 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
     if (dossie) setRegistros(dossie.pdaa.condutasRegistradas ?? [])
   }, [dossie?.colaborador.id])
 
-  // Ciclo atual como estado — pode avançar ao fechar
-  const [cicloAtual, setCicloAtual] = useState<{ ano: number; ciclo: string }>({ ano: 2026, ciclo: 'C2' })
+  // Ciclo atual — segue o ciclo global (aba Ciclos no painel), pra todo mundo
+  // enxergar/editar o mesmo período por padrão.
+  const [cicloAtual, setCicloAtual] = useState<{ ano: number; ciclo: string }>(cicloGlobal.cicloGlobal)
   useEffect(() => {
-    if (dossie) setCicloAtual(dossie.pdaa.cicloAtual)
-  }, [dossie?.colaborador.id])
+    setCicloAtual(cicloGlobal.cicloGlobal)
+  }, [cicloGlobal.cicloGlobal.ano, cicloGlobal.cicloGlobal.ciclo, dossie?.colaborador.id])
+
+  const cicloFechado = cicloGlobal.anoEstaFechado(cicloAtual.ano)
 
   // KPIs por ciclo como estado — permite edição manual
   const [kpisPorCiclo, setKpisPorCiclo] = useState<KpiCiclo[]>([])
@@ -341,6 +350,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   configCiclo={configCiclo}
                   mediaTimeKpis={mediaTimeKpis}
                   isAdmin={isAdmin}
+                  cicloFechado={cicloFechado}
                 />
               )}
               {tab === 'perfil' && (
@@ -366,6 +376,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   snapshots={snapshots}
                   isAdmin={isAdmin}
                   currentEmail={currentEmail}
+                  cicloFechado={cicloFechado}
                 />
               )}
               {tab === 'historico' && (

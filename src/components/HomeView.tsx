@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut, UserCog, Pencil } from 'lucide-react'
+import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut, UserCog, Pencil, CalendarClock } from 'lucide-react'
 import { cn } from '@/lib/ui'
 import { TeamDashboard } from './TeamDashboard'
 import { Administradores } from './tabs/Administradores'
+import { Ciclos } from './tabs/Ciclos'
+import type { UseCicloGlobal } from '@/hooks/useCicloGlobal'
 import type { Colaborador, Dossie } from '@/lib/types'
 
 export const DIRETORIAS = [
@@ -124,12 +126,13 @@ interface Props {
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   onSignOut?: () => void
+  cicloGlobal: UseCicloGlobal
 }
 
-export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, onUpdateMembro, theme, onToggleTheme, onSignOut }: Props) {
+export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, onUpdateMembro, theme, onToggleTheme, onSignOut, cicloGlobal }: Props) {
   const [editCargo, setEditCargo] = useState<Membro | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'membros' | 'dashboard' | 'administradores'>('membros')
+  const [activeTab, setActiveTab] = useState<'membros' | 'dashboard' | 'ciclos' | 'administradores'>('membros')
   const [busca, setBusca] = useState('')
   const [ocultos, setOcultos] = useState<Set<string>>(() => carregarOcultos())
   const [pasta, setPasta] = useState<'ativos' | 'pos'>('ativos')
@@ -226,6 +229,12 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                 <LayoutDashboard size={12} /> Dashboard
               </button>
               <button
+                onClick={() => setActiveTab('ciclos')}
+                className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors', activeTab === 'ciclos' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
+              >
+                <CalendarClock size={12} /> Ciclos
+              </button>
+              <button
                 onClick={() => setActiveTab('administradores')}
                 className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors', activeTab === 'administradores' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
               >
@@ -263,8 +272,10 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
       <main className="mx-auto max-w-5xl p-6 space-y-5">
         {/* Dashboard do time */}
         {activeTab === 'dashboard' && (
-          <TeamDashboard allDossies={allDossies} onSelectMembro={onSelect} />
+          <TeamDashboard allDossies={allDossies} onSelectMembro={onSelect} cicloGlobal={cicloGlobal} />
         )}
+
+        {activeTab === 'ciclos' && <Ciclos cicloGlobal={cicloGlobal} />}
 
         {activeTab === 'administradores' && <Administradores />}
 

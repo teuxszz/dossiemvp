@@ -1,0 +1,114 @@
+import { useState } from 'react'
+import { CalendarClock, Lock, AlertTriangle, Check, X, Users, ShieldCheck } from 'lucide-react'
+import { Card, SectionTitle } from '../Card'
+import { cn } from '@/lib/ui'
+import { CICLOS, type CicloTag, type UseCicloGlobal } from '@/hooks/useCicloGlobal'
+
+interface Props {
+  cicloGlobal: UseCicloGlobal
+}
+
+export function Ciclos({ cicloGlobal }: Props) {
+  const { cicloGlobal: atual, anosFechados, selecionarCiclo, podeAvancarAno, confirmarVirarAno } = cicloGlobal
+  const [confirmando, setConfirmando] = useState(false)
+
+  function trocar(ciclo: CicloTag) {
+    selecionarCiclo(ciclo)
+  }
+
+  function avancar() {
+    confirmarVirarAno()
+    setConfirmando(false)
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-4 sm:p-5">
+        <SectionTitle icon={<CalendarClock size={15} />}>Ciclo ativo</SectionTitle>
+        <p className="mt-1 text-xs text-ink-secondary">
+          Define o ciclo (C1–C4) que o painel usa por padrão em todos os dossiês — KPIs, PDAA e abonos do ciclo
+          corrente. Alternar aqui não muda dados antigos, só qual período fica "aberto" pra edição.
+        </p>
+
+        <div className="mt-4 flex items-center gap-4">
+          <div className="font-display text-4xl font-bold text-brand">{atual.ano}</div>
+          <div className="flex rounded-lg border border-line bg-bg-secondary p-1">
+            {CICLOS.map((c) => (
+              <button
+                key={c}
+                onClick={() => trocar(c)}
+                className={cn(
+                  'rounded-md px-4 py-2 text-sm font-semibold transition-colors',
+                  atual.ciclo === c ? 'bg-brand text-white shadow-card' : 'text-ink-tertiary hover:text-ink-primary',
+                )}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {podeAvancarAno && (
+          <div className="mt-4 rounded-lg border border-warn/30 bg-warn/5 p-4">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-warn" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-ink-primary">
+                  {atual.ciclo} é o último ciclo de {atual.ano}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-secondary">
+                  Avançar pra {atual.ano + 1} C1 congela {atual.ano} — os dados continuam visíveis no histórico de
+                  cada membro, mas viram somente leitura. Cargos de liderança (diretores e gerentes) não são
+                  alterados por essa ação.
+                </p>
+                {!confirmando ? (
+                  <button
+                    onClick={() => setConfirmando(true)}
+                    className="mt-3 flex items-center gap-1.5 rounded-lg bg-warn px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                  >
+                    <Lock size={12} /> Avançar para {atual.ano + 1} C1
+                  </button>
+                ) : (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-medium text-ink-primary">Confirma o fechamento de {atual.ano}?</span>
+                    <button onClick={avancar} className="flex items-center gap-1.5 rounded-lg bg-warn px-3 py-1.5 text-xs font-medium text-white hover:opacity-90">
+                      <Check size={12} /> Confirmar
+                    </button>
+                    <button onClick={() => setConfirmando(false)} className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-ink-secondary hover:text-ink-primary">
+                      <X size={12} /> Cancelar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-4 sm:p-5">
+        <SectionTitle icon={<ShieldCheck size={15} />}>O que muda (e o que não muda) ao virar o ano</SectionTitle>
+        <ul className="mt-2 space-y-2 text-xs text-ink-secondary">
+          <li className="flex gap-2"><Lock size={13} className="mt-0.5 shrink-0 text-warn" /> KPIs, condutas PDAA e abonos do ano fechado passam a ser só leitura — continuam no histórico de cada dossiê.</li>
+          <li className="flex gap-2"><Users size={13} className="mt-0.5 shrink-0 text-brand" /> Cargos, diretorias e a estrutura de liderança (diretores, gerentes, coordenadores) não são tocados — isso é gerenciado à parte, em Membros.</li>
+          <li className="flex gap-2"><CalendarClock size={13} className="mt-0.5 shrink-0 text-good" /> O novo ano começa em C1 com o quadro de membros exatamente como estava.</li>
+        </ul>
+      </Card>
+
+      {anosFechados.size > 0 && (
+        <Card className="p-4 sm:p-5">
+          <SectionTitle icon={<Lock size={15} />}>Anos fechados</SectionTitle>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {[...anosFechados].sort((a, b) => b - a).map((ano) => (
+              <span key={ano} className="rounded-md border border-line bg-bg-secondary px-2.5 py-1 text-xs text-ink-secondary">
+                {ano} · congelado
+              </span>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-ink-tertiary">
+            Pra ver os dados de um ano fechado, abra o dossiê do membro e use as abas de ano nos gráficos.
+          </p>
+        </Card>
+      )}
+    </div>
+  )
+}

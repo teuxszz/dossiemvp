@@ -19,6 +19,7 @@ interface Props {
   configCiclo: ConfigCiclo | null
   mediaTimeKpis: KpiCiclo[]
   isAdmin: boolean
+  cicloFechado: boolean
 }
 
 // Campos de KPI editáveis manualmente
@@ -31,7 +32,7 @@ const KPI_FIELDS = [
 
 type KpiField = (typeof KPI_FIELDS)[number]['key']
 
-export function Dashboard({ dossie, pontosPdaa, cicloAtual, kpisPorCiclo, setKpisPorCiclo, snapshots, configCiclo, mediaTimeKpis, isAdmin }: Props) {
+export function Dashboard({ dossie, pontosPdaa, cicloAtual, kpisPorCiclo, setKpisPorCiclo, snapshots, configCiclo, mediaTimeKpis, isAdmin, cicloFechado }: Props) {
   const anosKpi = useMemo(
     () => [...new Set(kpisPorCiclo.map((k) => k.ano))].sort((a, b) => b - a),
     [kpisPorCiclo],
@@ -119,7 +120,7 @@ export function Dashboard({ dossie, pontosPdaa, cicloAtual, kpisPorCiclo, setKpi
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <SectionTitle icon={<BarChart3 size={15} />}>KPIs por ciclo — {anoKpi}</SectionTitle>
           <div className="flex items-center gap-2">
-            {isAdmin && anoKpi === cicloAtual.ano && !snapshotAtual && (
+            {isAdmin && anoKpi === cicloAtual.ano && !snapshotAtual && !cicloFechado && (
               editandoKpi ? (
                 <div className="flex gap-1.5">
                   <button onClick={salvarKpi} className="flex items-center gap-1 rounded-md bg-good-soft px-2 py-1 text-[11px] text-good hover:opacity-80">
@@ -185,7 +186,9 @@ export function Dashboard({ dossie, pontosPdaa, cicloAtual, kpisPorCiclo, setKpi
           )}
         </div>
         <p className="mt-2 text-[11px] text-ink-tertiary">
-          Quatro ciclos por ano (C1–C4). Clique em "Editar {cicloAtual.ciclo}" para inserir os valores do ciclo atual manualmente.
+          {cicloFechado
+            ? `Ano ${cicloAtual.ano} fechado — dados congelados, só leitura.`
+            : `Quatro ciclos por ano (C1–C4). Clique em "Editar ${cicloAtual.ciclo}" para inserir os valores do ciclo atual manualmente.`}
         </p>
       </Card>
 
