@@ -1,27 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ===========================================================================
-   Paleta baseada no site de referência (CONSEJ — Módulo Financeiro):
-   navy escuro + accent ciano/teal. O tema ESCURO é o padrão.
-   A sidebar é sempre navy escura (em ambos os temas).
+   Paleta Hub CONSEJ — navy profundo + ciano, espelhando o design de
+   referência (Sora para display, Manrope para corpo). Tema escuro é o
+   padrão; a sidebar é sempre navy escura em ambos os temas.
    =========================================================================== */
 
 :root,
 html.dark {
-  --bg-primary: #0e2939; /* cards */
-  --bg-secondary: #123449; /* superfícies elevadas */
-  --bg-tertiary: #011e32; /* fundo da página */
-  --ink-primary: #fafafa;
-  --ink-secondary: #c4cfd4;
-  --ink-tertiary: #92a2aa;
-  --line: #273e49;
-  --line-strong: #406577;
+  --bg-primary: oklch(0.23 0.045 250); /* surface — cards */
+  --bg-secondary: oklch(0.27 0.05 250); /* surface-2 — elevado */
+  --bg-tertiary: oklch(0.19 0.04 250); /* background — fundo da página */
+  --ink-primary: oklch(0.97 0.01 240);
+  --ink-secondary: oklch(0.78 0.03 240);
+  --ink-tertiary: oklch(0.62 0.03 240);
+  --line: oklch(0.32 0.04 250);
+  --line-strong: oklch(0.4 0.05 250);
 
-  --brand-soft: rgba(0, 139, 173, 0.18);
+  --brand-soft: rgba(26, 184, 221, 0.18);
   --good-soft: rgba(32, 182, 145, 0.16);
   --warn-soft: rgba(246, 168, 35, 0.16);
   --bad-soft: rgba(226, 54, 69, 0.16);
@@ -38,7 +36,7 @@ html.light {
   --line: #dfe6ea;
   --line-strong: #c4cfd4;
 
-  --brand-soft: rgba(0, 100, 143, 0.12);
+  --brand-soft: rgba(26, 184, 221, 0.12);
   --good-soft: rgba(32, 182, 145, 0.14);
   --warn-soft: rgba(246, 168, 35, 0.16);
   --bad-soft: rgba(226, 54, 69, 0.12);
@@ -47,11 +45,11 @@ html.light {
 
 /* Sidebar — tokens fixos (navy) independentes do tema. */
 :root {
-  --sidebar-bg: #011523;
-  --sidebar-fg: #c4cfd4;
-  --sidebar-active: #fafafa;
-  --sidebar-accent: #0e2939;
-  --sidebar-border: #1d2d35;
+  --sidebar-bg: oklch(0.15 0.035 250);
+  --sidebar-fg: oklch(0.72 0.03 240);
+  --sidebar-active: oklch(0.97 0.01 240);
+  --sidebar-accent: oklch(0.23 0.045 250);
+  --sidebar-border: oklch(0.28 0.04 250);
 }
 
 * {
@@ -66,11 +64,33 @@ body,
 
 body {
   margin: 0;
-  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg-tertiary);
   color: var(--ink-primary);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Sora', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.font-display {
+  font-family: 'Sora', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+}
+
+.eyebrow {
+  font-family: 'Sora', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: var(--ink-tertiary);
 }
 
 @layer utilities {

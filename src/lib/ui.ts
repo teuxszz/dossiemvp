@@ -34,5 +34,5 @@ export const toneHex: Record<Tone, string> = {
   good: '#20b691',
   warn: '#f6a823',
   bad: '#e23645',
-  info: '#008bad',
+  info: '#1ab8dd',
 }

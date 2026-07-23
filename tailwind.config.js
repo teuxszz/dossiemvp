@@ -27,10 +27,12 @@ export default {
           accent: 'var(--sidebar-accent)',
           border: 'var(--sidebar-border)',
         },
-        // Paleta do site de referência (CONSEJ — Módulo Financeiro).
+        // Paleta navy + ciano (alinhada ao design de referência CONSEJ).
+        // Hex literais (não var()) para preservar os modificadores de opacidade do Tailwind (bg-brand/10 etc.).
         brand: {
-          DEFAULT: '#008bad', // accent ciano
-          dark: '#00648f', // primary
+          DEFAULT: '#1ab8dd', // accent ciano vívido
+          dark: '#0f8aac',
+          glow: '#6fd8ef',
           soft: 'var(--brand-soft)',
         },
         good: { DEFAULT: '#20b691', bar: '#20b691', soft: 'var(--good-soft)' },
@@ -41,13 +43,17 @@ export default {
         md: '8px',
         lg: '12px',
         xl: '16px',
+        '2xl': '20px',
+        '3xl': '24px',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Manrope', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['Sora', 'Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         card: '0 1px 2px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.22)',
         pop: '0 8px 24px rgba(0,0,0,0.35)',
+        glow: '0 8px 24px -6px var(--brand-soft)',
       },
     },
   },
