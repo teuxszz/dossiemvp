@@ -9,6 +9,8 @@ export interface AuthState {
   isAdmin: boolean
   /** true enquanto resolve a sessão inicial ou a checagem de admin. */
   loading: boolean
+  /** true só quando o Supabase está configurado — só aí faz sentido exigir login. */
+  authRequired: boolean
   error: string | null
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
@@ -75,6 +77,7 @@ export function useAuth(): AuthState {
     email: session?.user?.email ?? null,
     isAdmin,
     loading: session === undefined || checkingAdmin,
+    authRequired: isSupabaseConfigured,
     error,
     signIn,
     signOut,

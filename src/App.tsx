@@ -57,7 +57,7 @@ export function App() {
 
   const auth = useAuth()
 
-  if (auth.session === undefined || auth.loading) {
+  if (auth.authRequired && (auth.session === undefined || auth.loading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg-tertiary text-sm text-ink-tertiary">
         Carregando…
@@ -65,7 +65,7 @@ export function App() {
     )
   }
 
-  if (auth.session === null) {
+  if (auth.authRequired && auth.session === null) {
     return <LoginScreen onSubmit={auth.signIn} error={auth.error} />
   }
 
