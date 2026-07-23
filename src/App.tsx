@@ -10,7 +10,6 @@ import { Historico } from './components/tabs/Historico'
 import { Feedbacks } from './components/tabs/Feedbacks'
 import { Entregas } from './components/tabs/Entregas'
 import { Seguranca } from './components/tabs/Seguranca'
-import { Administradores } from './components/tabs/Administradores'
 import { FeedbackForm } from './components/FeedbackForm'
 import { useDossie } from './hooks/useDossie'
 import { useAuth } from './hooks/useAuth'
@@ -386,7 +385,6 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                 />
               )}
               {tab === 'seguranca' && <Seguranca dossie={dossie} />}
-              {tab === 'admins' && isAdmin && <Administradores />}
             </main>
           </>
         )}

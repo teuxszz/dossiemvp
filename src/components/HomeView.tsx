@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut } from 'lucide-react'
+import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut, UserCog } from 'lucide-react'
 import { cn } from '@/lib/ui'
 import { TeamDashboard } from './TeamDashboard'
+import { Administradores } from './tabs/Administradores'
 import type { Colaborador, Dossie } from '@/lib/types'
 
 export const DIRETORIAS = [
@@ -124,7 +125,7 @@ interface Props {
 
 export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, theme, onToggleTheme, onSignOut }: Props) {
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'membros' | 'dashboard'>('membros')
+  const [activeTab, setActiveTab] = useState<'membros' | 'dashboard' | 'administradores'>('membros')
   const [busca, setBusca] = useState('')
   const [ocultos, setOcultos] = useState<Set<string>>(() => carregarOcultos())
   const [pasta, setPasta] = useState<'ativos' | 'pos'>('ativos')
@@ -201,6 +202,12 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
               >
                 <LayoutDashboard size={12} /> Dashboard
               </button>
+              <button
+                onClick={() => setActiveTab('administradores')}
+                className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors', activeTab === 'administradores' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
+              >
+                <UserCog size={12} /> Administradores
+              </button>
             </div>
             <button
               onClick={onToggleTheme}
@@ -235,6 +242,8 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
         {activeTab === 'dashboard' && (
           <TeamDashboard allDossies={allDossies} onSelectMembro={onSelect} />
         )}
+
+        {activeTab === 'administradores' && <Administradores />}
 
         {activeTab === 'membros' && <>
         {/* Barra de busca e filtro */}
