@@ -131,6 +131,9 @@ export interface Colaborador {
   ssoMfa: boolean
   /** E-mail de login (Supabase Auth) — vincula esta linha ao usuário autenticado. */
   email?: string
+  /** Segundo cargo/diretoria, para quem acumula duas funções (ex.: Diretor(a) + Presidente Executivo). */
+  cargoSecundario?: string
+  areaSecundaria?: string
 }
 
 // ---- PDAA (Plano de Avaliação e Autogestão · sistema de pontos / farol) ----

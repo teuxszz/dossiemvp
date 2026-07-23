@@ -323,8 +323,12 @@ function membro(
   iniciais: string,
   dataEntrada: string,
   kpisPorCiclo: KpiCiclo[] = [],
+  cargoDuplo?: { cargoSecundario: string; areaSecundaria: string },
 ): Dossie {
-  const base = criarDossieBase({ id, nome, cargo, area, matricula: '', iniciais, acessoRestrito: false, ssoMfa: false })
+  const base = criarDossieBase({
+    id, nome, cargo, area, matricula: '', iniciais, acessoRestrito: false, ssoMfa: false,
+    ...cargoDuplo,
+  })
   base.perfil.dataEntrada = dataEntrada
   base.kpisPorCiclo = kpisPorCiclo
   base.timeline = [
@@ -394,9 +398,12 @@ export const MOCK_MEMBROS: Dossie[] = [
   // ---- Quadro completo importado do organograma — sem dados de desempenho ainda ----
 
   // Diretoria executiva
-  membro('ana-luiza-medeiros', 'Ana Luiza Cortez de Medeiros', 'Presidente Executivo', 'Diretoria de Presidência', 'AL', ''),
-  membro('gabi-domingues', 'Gabi Domingues', 'Vice-Presidente', 'Diretoria de Vice-Presidência', 'GD', ''),
-  membro('luna-cavalcanti', 'Luna Cavalcanti Ferreira de Melo', 'Diretor(a) de Negócios', 'Diretoria de Negócios', 'LC', ''),
+  membro('ana-luiza-medeiros', 'Ana Luiza Cortez de Medeiros', 'Diretora de Demandas', 'Diretoria de Demandas', 'AL', '', [],
+    { cargoSecundario: 'Presidente Executiva', areaSecundaria: 'Diretoria de Presidência' }),
+  membro('gabi-domingues', 'Gabi Domingues', 'Diretora de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'GD', '', [],
+    { cargoSecundario: 'Vice-Presidente', areaSecundaria: 'Diretoria de Vice-Presidência' }),
+  membro('luna-cavalcanti', 'Luna Cavalcanti Ferreira de Melo', 'Diretora de Negócios', 'Diretoria de Negócios', 'LC', '', [],
+    { cargoSecundario: 'Diretora de Marketing', areaSecundaria: 'Diretoria de Marketing' }),
 
   // Gerência
   membro('camila-pereira', 'Camila Silveira de Medeiros Pereira', 'Gerente de Marketing', 'Diretoria de Marketing', 'CS', ''),

@@ -91,6 +91,8 @@ interface Membro {
   cargo: string
   area: string
   iniciais: string
+  cargoSecundario?: string
+  areaSecundaria?: string
 }
 
 interface NovoMembroForm {
@@ -445,8 +447,15 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                   </div>
                   <div className="min-w-0 pr-6">
                     <p className="truncate text-[13px] font-semibold text-ink-primary group-hover:text-brand">{m.nome}</p>
-                    <p className="mt-0.5 truncate text-[11px] text-ink-secondary">{m.cargo}</p>
-                    <p className="mt-1 truncate text-[10px] text-ink-tertiary">{m.area}</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargo}</span>
+                      {m.cargoSecundario && (
+                        <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargoSecundario}</span>
+                      )}
+                    </div>
+                    <p className="mt-1 truncate text-[10px] text-ink-tertiary">
+                      {m.area}{m.areaSecundaria ? ` · ${m.areaSecundaria}` : ''}
+                    </p>
                   </div>
                 </button>
                 <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">

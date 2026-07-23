@@ -7,7 +7,7 @@ export type DataSource = 'supabase' | 'mock'
 
 interface UseDossieResult {
   dossie: Dossie | null
-  membros: Pick<Colaborador, 'id' | 'nome' | 'cargo' | 'area' | 'iniciais'>[]
+  membros: Pick<Colaborador, 'id' | 'nome' | 'cargo' | 'area' | 'iniciais' | 'cargoSecundario' | 'areaSecundaria'>[]
   allDossies: Dossie[] // todos os dossiês (mock mode apenas)
   selectedId: string | null
   setSelectedId: (id: string | null) => void
@@ -61,6 +61,7 @@ function rowToDossie(row: ColaboradorRow): Dossie {
 }
 
 const LS_EXTRAS = 'dossie_membros_extras'
+const LS_REMOVIDOS = 'dossie_membros_removidos'
 
 function loadExtras(): Dossie[] {
   try { return JSON.parse(localStorage.getItem(LS_EXTRAS) ?? '[]') } catch { return [] }
@@ -69,13 +70,24 @@ function saveExtras(extras: Dossie[]) {
   localStorage.setItem(LS_EXTRAS, JSON.stringify(extras))
 }
 
+// Ids removidos pelo admin. Os membros "de fábrica" (MOCK_MEMBROS) vivem num
+// array const no código — não dá pra tirar item dali em runtime, então
+// guardamos os ids removidos aqui e filtramos em todo lugar que lista membros.
+function loadRemovidos(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(LS_REMOVIDOS) ?? '[]')) } catch { return new Set() }
+}
+function saveRemovidos(ids: Set<string>) {
+  localStorage.setItem(LS_REMOVIDOS, JSON.stringify([...ids]))
+}
+
 const source: DataSource = isSupabaseConfigured ? 'supabase' : 'mock'
 
 export function useDossie(): UseDossieResult {
   // Mock extras (membros criados pelo coordenador)
   const [extras, setExtras] = useState<Dossie[]>(loadExtras)
+  const [removidos, setRemovidos] = useState<Set<string>>(loadRemovidos)
 
-  const allMock: Dossie[] = [...MOCK_MEMBROS, ...extras]
+  const allMock: Dossie[] = [...MOCK_MEMBROS, ...extras].filter((d) => !removidos.has(d.colaborador.id))
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [dossie, setDossie] = useState<Dossie | null>(null)
@@ -89,11 +101,13 @@ export function useDossie(): UseDossieResult {
     cargo: d.colaborador.cargo,
     area: d.colaborador.area,
     iniciais: d.colaborador.iniciais,
+    cargoSecundario: d.colaborador.cargoSecundario,
+    areaSecundaria: d.colaborador.areaSecundaria,
   }))
 
   // Lista de membros exposta para a HomeView — sempre inclui mock + extras
   const membros: UseDossieResult['membros'] = isSupabaseConfigured
-    ? [...mockMembros, ...supabaseMembros.filter((s) => !allMock.some((m) => m.colaborador.id === s.id))]
+    ? [...mockMembros, ...supabaseMembros.filter((s) => !allMock.some((m) => m.colaborador.id === s.id) && !removidos.has(s.id))]
     : mockMembros
 
   // Carrega lista do Supabase (só quando configurado)
@@ -114,14 +128,13 @@ export function useDossie(): UseDossieResult {
 
   // Carrega o dossiê quando selectedId ou extras mudam
   useEffect(() => {
-    if (!selectedId) { setDossie(null); return }
+    if (!selectedId || removidos.has(selectedId)) { setDossie(null); return }
 
     setLoading(true)
     setError(null)
 
     // Sempre tenta local primeiro (mock + extras criados pelo coordenador)
-    const all = [...MOCK_MEMBROS, ...extras]
-    const local = all.find((d) => d.colaborador.id === selectedId) ?? null
+    const local = allMock.find((d) => d.colaborador.id === selectedId) ?? null
     if (local || !supabase) {
       setDossie(local)
       setLoading(false)
@@ -143,7 +156,7 @@ export function useDossie(): UseDossieResult {
       })
 
     return () => { active = false }
-  }, [selectedId, extras])
+  }, [selectedId, extras, removidos])
 
   function addMembro(colab: Colaborador) {
     const novo = criarDossieBase(colab)
@@ -178,12 +191,38 @@ export function useDossie(): UseDossieResult {
   }
 
   function removeMembro(id: string) {
-    // Membros mock fixos não podem ser removidos
-    const isMock = MOCK_MEMBROS.some((d) => d.colaborador.id === id)
-    if (isMock) return
-    const updated = extras.filter((d) => d.colaborador.id !== id)
-    setExtras(updated)
-    saveExtras(updated)
+    if (selectedId === id) setSelectedId(null)
+
+    // Membro criado neste navegador (extras) — tira da lista local.
+    if (extras.some((d) => d.colaborador.id === id)) {
+      const updated = extras.filter((d) => d.colaborador.id !== id)
+      setExtras(updated)
+      saveExtras(updated)
+      return
+    }
+
+    // Membro "de fábrica" (MOCK_MEMBROS, incluindo o quadro importado do
+    // organograma) — não dá pra tirar do array const, então marca como
+    // removido e filtra em toda listagem daqui pra frente.
+    if (MOCK_MEMBROS.some((d) => d.colaborador.id === id)) {
+      const updated = new Set(removidos)
+      updated.add(id)
+      setRemovidos(updated)
+      saveRemovidos(updated)
+      return
+    }
+
+    // Membro que só existe no Supabase — remove de verdade lá (RLS exige admin).
+    setSupabaseMembros((prev) => prev.filter((m) => m.id !== id))
+    if (supabase) {
+      supabase
+        .from('colaboradores')
+        .delete()
+        .eq('id', id)
+        .then(({ error: err }) => {
+          if (err) console.warn('Não foi possível remover no Supabase:', err.message)
+        })
+    }
   }
 
   async function resolveIdByEmail(email: string): Promise<string | null> {
