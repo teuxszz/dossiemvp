@@ -13,6 +13,8 @@ export interface AuthState {
   authRequired: boolean
   error: string | null
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  /** Cadastro público — a senha nunca passa pelo admin. `needsConfirmation` indica se falta confirmar o e-mail. */
+  signUp: (email: string, password: string) => Promise<{ error: string | null; needsConfirmation: boolean }>
   signOut: () => Promise<void>
 }
 
@@ -67,6 +69,19 @@ export function useAuth(): AuthState {
     return { error: null }
   }
 
+  async function signUp(email: string, password: string) {
+    if (!supabase) return { error: null, needsConfirmation: false }
+    setError(null)
+    const { data, error: err } = await supabase.auth.signUp({ email, password })
+    if (err) {
+      setError(err.message)
+      return { error: err.message, needsConfirmation: false }
+    }
+    // Se o projeto exige confirmação por e-mail, o signUp não retorna sessão ainda.
+    const needsConfirmation = !data.session
+    return { error: null, needsConfirmation }
+  }
+
   async function signOut() {
     if (!supabase) return
     await supabase.auth.signOut()
@@ -80,6 +95,7 @@ export function useAuth(): AuthState {
     authRequired: isSupabaseConfigured,
     error,
     signIn,
+    signUp,
     signOut,
   }
 }
