@@ -65,7 +65,7 @@ export function App() {
   }
 
   if (auth.authRequired && auth.session === null) {
-    return <LoginScreen onSignIn={auth.signIn} onSignUp={auth.signUp} error={auth.error} />
+    return <LoginScreen onSignIn={auth.signIn} onSignUp={auth.signUp} onResetPassword={auth.resetPassword} error={auth.error} />
   }
 
   return <MainApp email={auth.email} isAdmin={auth.isAdmin} onSignOut={auth.signOut} />
