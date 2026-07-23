@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut, UserCog } from 'lucide-react'
+import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut, UserCog, Pencil } from 'lucide-react'
 import { cn } from '@/lib/ui'
 import { TeamDashboard } from './TeamDashboard'
 import { Administradores } from './tabs/Administradores'
@@ -120,12 +120,14 @@ interface Props {
   onSelect: (id: string) => void
   onAddMembro: (colab: Colaborador) => void
   onRemoveMembro: (id: string) => void
+  onUpdateMembro: (id: string, patch: Partial<Colaborador>) => void
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   onSignOut?: () => void
 }
 
-export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, theme, onToggleTheme, onSignOut }: Props) {
+export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, onUpdateMembro, theme, onToggleTheme, onSignOut }: Props) {
+  const [editCargo, setEditCargo] = useState<Membro | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'membros' | 'dashboard' | 'administradores'>('membros')
   const [busca, setBusca] = useState('')
@@ -415,6 +417,18 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
           </div>
         )}
 
+        {/* Modal de edição de cargo/diretoria */}
+        {editCargo && (
+          <EditCargoDialog
+            membro={editCargo}
+            onClose={() => setEditCargo(null)}
+            onSave={(patch) => {
+              onUpdateMembro(editCargo.id, patch)
+              setEditCargo(null)
+            }}
+          />
+        )}
+
         {/* Modal de confirmação de remoção */}
         {confirmRemove && (() => {
           const m = membros.find((x) => x.id === confirmRemove)
@@ -479,6 +493,7 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                       onToggleOculto={() => alternarOculto(m.id)}
                       onRemove={() => setConfirmRemove(m.id)}
                       onSelect={() => onSelect(m.id)}
+                      onEdit={() => setEditCargo(m)}
                     />
                   ))}
                 </div>
@@ -495,6 +510,7 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
                 onToggleOculto={() => alternarOculto(m.id)}
                 onRemove={() => setConfirmRemove(m.id)}
                 onSelect={() => onSelect(m.id)}
+                onEdit={() => setEditCargo(m)}
               />
             ))}
           </div>
@@ -505,18 +521,157 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
   )
 }
 
+function EditCargoDialog({
+  membro,
+  onClose,
+  onSave,
+}: {
+  membro: Membro
+  onClose: () => void
+  onSave: (patch: Partial<Colaborador>) => void
+}) {
+  const [area, setArea] = useState(membro.area)
+  const [cargo, setCargo] = useState(membro.cargo)
+  const [temSegundo, setTemSegundo] = useState(!!membro.cargoSecundario)
+  const [areaSecundaria, setAreaSecundaria] = useState(membro.areaSecundaria ?? DIRETORIAS[0])
+  const [cargoSecundario, setCargoSecundario] = useState(membro.cargoSecundario ?? '')
+
+  function opcoesCargo(dir: string) {
+    return CARGOS_POR_DIRETORIA[dir] ?? []
+  }
+
+  function salvar() {
+    if (!cargo.trim()) return
+    onSave({
+      area,
+      cargo: cargo.trim(),
+      cargoSecundario: temSegundo && cargoSecundario.trim() ? cargoSecundario.trim() : undefined,
+      areaSecundaria: temSegundo && cargoSecundario.trim() ? areaSecundaria : undefined,
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-xl border border-line bg-bg-primary p-6 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold text-ink-primary">Editar cargo — {membro.nome}</h2>
+          <button onClick={onClose} className="text-ink-tertiary hover:text-ink-primary">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-[11px] text-ink-tertiary">Diretoria</label>
+            <select
+              value={area}
+              onChange={(e) => {
+                const novaArea = e.target.value
+                setArea(novaArea)
+                const opcoes = opcoesCargo(novaArea)
+                if (opcoes.length && !opcoes.includes(cargo)) setCargo(opcoes[0])
+              }}
+              className="w-full rounded-lg border border-line bg-bg-secondary px-3 py-2 text-sm text-ink-primary focus:border-brand focus:outline-none"
+            >
+              {DIRETORIAS.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] text-ink-tertiary">Cargo</label>
+            {opcoesCargo(area).length > 0 ? (
+              <select
+                value={opcoesCargo(area).includes(cargo) ? cargo : ''}
+                onChange={(e) => setCargo(e.target.value)}
+                className="w-full rounded-lg border border-line bg-bg-secondary px-3 py-2 text-sm text-ink-primary focus:border-brand focus:outline-none"
+              >
+                <option value="" disabled>Selecione o cargo…</option>
+                {opcoesCargo(area).map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            ) : (
+              <input
+                value={cargo}
+                onChange={(e) => setCargo(e.target.value)}
+                className="w-full rounded-lg border border-line bg-bg-secondary px-3 py-2 text-sm text-ink-primary focus:border-brand focus:outline-none"
+              />
+            )}
+          </div>
+
+          <label className="flex items-center gap-2 pt-1 text-xs text-ink-secondary">
+            <input type="checkbox" checked={temSegundo} onChange={(e) => setTemSegundo(e.target.checked)} className="accent-brand" />
+            Essa pessoa acumula um segundo cargo/diretoria
+          </label>
+
+          {temSegundo && (
+            <div className="space-y-3 rounded-lg border border-line bg-bg-secondary p-3">
+              <div>
+                <label className="mb-1 block text-[11px] text-ink-tertiary">Diretoria (2º cargo)</label>
+                <select
+                  value={areaSecundaria}
+                  onChange={(e) => {
+                    const novaArea = e.target.value
+                    setAreaSecundaria(novaArea)
+                    const opcoes = opcoesCargo(novaArea)
+                    if (opcoes.length && !opcoes.includes(cargoSecundario)) setCargoSecundario(opcoes[0])
+                  }}
+                  className="w-full rounded-lg border border-line bg-bg-tertiary px-3 py-2 text-sm text-ink-primary focus:border-brand focus:outline-none"
+                >
+                  {DIRETORIAS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] text-ink-tertiary">Cargo (2º cargo)</label>
+                {opcoesCargo(areaSecundaria).length > 0 ? (
+                  <select
+                    value={opcoesCargo(areaSecundaria).includes(cargoSecundario) ? cargoSecundario : ''}
+                    onChange={(e) => setCargoSecundario(e.target.value)}
+                    className="w-full rounded-lg border border-line bg-bg-tertiary px-3 py-2 text-sm text-ink-primary focus:border-brand focus:outline-none"
+                  >
+                    <option value="" disabled>Selecione o cargo…</option>
+                    {opcoesCargo(areaSecundaria).map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    value={cargoSecundario}
+                    onChange={(e) => setCargoSecundario(e.target.value)}
+                    className="w-full rounded-lg border border-line bg-bg-tertiary px-3 py-2 text-sm text-ink-primary focus:border-brand focus:outline-none"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg border border-line px-4 py-2 text-sm text-ink-secondary hover:text-ink-primary">
+            Cancelar
+          </button>
+          <button
+            onClick={salvar}
+            disabled={!cargo.trim()}
+            className="flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 disabled:opacity-40"
+          >
+            <Check size={13} /> Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MembroCard({
   m,
   oculto,
   onToggleOculto,
   onRemove,
   onSelect,
+  onEdit,
 }: {
   m: Membro
   oculto: boolean
   onToggleOculto: () => void
   onRemove: () => void
   onSelect: () => void
+  onEdit: () => void
 }) {
   return (
     <div className="group relative">
@@ -542,6 +697,13 @@ function MembroCard({
         </div>
       </button>
       <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit() }}
+          className="rounded-md p-1.5 text-ink-tertiary hover:bg-brand/15 hover:text-brand"
+          title="Editar cargo/diretoria"
+        >
+          <Pencil size={13} />
+        </button>
         <button
           onClick={(e) => { e.stopPropagation(); onToggleOculto() }}
           className="rounded-md p-1.5 text-ink-tertiary hover:bg-brand/15 hover:text-brand"

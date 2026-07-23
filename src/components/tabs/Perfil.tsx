@@ -26,7 +26,8 @@ import { Card, SectionTitle } from '../Card'
 import { RadarCompetencias } from '../charts/Charts'
 import { cn, toneBadge, type Tone } from '@/lib/ui'
 import { supabase } from '@/lib/supabase'
-import type { Dossie, Perfil as PerfilType, Competencia, PassagemDiretoria, ParticipacaoGT, AvaliacaoDesenvolvimento } from '@/lib/types'
+import { DIRETORIAS, CARGOS_POR_DIRETORIA } from '../HomeView'
+import type { Dossie, Perfil as PerfilType, Competencia, PassagemDiretoria, ParticipacaoGT, AvaliacaoDesenvolvimento, Colaborador } from '@/lib/types'
 
 const recomIcon: Record<Tone, typeof TrendingUp> = {
   good: TrendingUp,
@@ -186,26 +187,39 @@ function DadosMembro({
 
 // ---------- Trajetória ----------
 
-function Trajetoria({ dossie, isAdmin }: { dossie: Dossie; isAdmin: boolean }) {
+function Trajetoria({
+  dossie,
+  isAdmin,
+  onUpdateColaborador,
+}: {
+  dossie: Dossie
+  isAdmin: boolean
+  onUpdateColaborador: (patch: Partial<Colaborador>) => void
+}) {
   const p = dossie.perfil
   const [editing, setEditing] = useState(false)
-  const [diretoriaAtual, setDiretoriaAtual] = useState(p.diretoriaAtual)
+  const [diretoriaAtual, setDiretoriaAtual] = useState(dossie.colaborador.area)
   const [cargoAtual, setCargoAtual] = useState(dossie.colaborador.cargo)
   const [anteriores, setAnteriores] = useState<PassagemDiretoria[]>(p.diretoriasAnteriores)
-  const [savedDir, setSavedDir] = useState(diretoriaAtual)
-  const [savedCargo, setSavedCargo] = useState(cargoAtual)
   const [savedAnt, setSavedAnt] = useState(anteriores)
   const [expanded, setExpanded] = useState(true)
 
+  function opcoesCargo(dir: string) {
+    return CARGOS_POR_DIRETORIA[dir] ?? []
+  }
+
+  function abrirEdicao() {
+    setDiretoriaAtual(dossie.colaborador.area)
+    setCargoAtual(dossie.colaborador.cargo)
+    setAnteriores(savedAnt)
+    setEditing(true)
+  }
   function save() {
-    setSavedDir(diretoriaAtual)
-    setSavedCargo(cargoAtual)
+    onUpdateColaborador({ area: diretoriaAtual, cargo: cargoAtual })
     setSavedAnt(anteriores)
     setEditing(false)
   }
   function cancel() {
-    setDiretoriaAtual(savedDir)
-    setCargoAtual(savedCargo)
     setAnteriores(savedAnt)
     setEditing(false)
   }
@@ -233,7 +247,7 @@ function Trajetoria({ dossie, isAdmin }: { dossie: Dossie; isAdmin: boolean }) {
             </button>
           </div>
         ) : (
-          <button onClick={() => setEditing(true)} className="flex items-center gap-1 rounded-md bg-bg-secondary px-2 py-1 text-[11px] text-ink-secondary hover:text-brand">
+          <button onClick={abrirEdicao} className="flex items-center gap-1 rounded-md bg-bg-secondary px-2 py-1 text-[11px] text-ink-secondary hover:text-brand">
             <Pencil size={12} /> Editar
           </button>
         ))}
@@ -245,13 +259,20 @@ function Trajetoria({ dossie, isAdmin }: { dossie: Dossie; isAdmin: boolean }) {
             <Building2 size={13} /> Diretoria atual
           </div>
           {editing ? (
-            <input
+            <select
               value={diretoriaAtual}
-              onChange={(e) => setDiretoriaAtual(e.target.value)}
-              className="mt-1 w-full rounded border border-line bg-bg-tertiary px-2 py-0.5 text-[13px] text-ink-primary focus:border-brand focus:outline-none"
-            />
+              onChange={(e) => {
+                const nova = e.target.value
+                setDiretoriaAtual(nova)
+                const opcoes = opcoesCargo(nova)
+                if (opcoes.length && !opcoes.includes(cargoAtual)) setCargoAtual(opcoes[0])
+              }}
+              className="mt-1 w-full rounded border border-line bg-bg-tertiary px-2 py-1 text-[13px] text-ink-primary focus:border-brand focus:outline-none"
+            >
+              {DIRETORIAS.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
           ) : (
-            <div className="mt-1 text-[13px] font-medium text-ink-primary">{savedDir}</div>
+            <div className="mt-1 text-[13px] font-medium text-ink-primary">{dossie.colaborador.area}</div>
           )}
         </div>
         <div className="rounded-lg border border-line bg-bg-secondary p-3">
@@ -259,13 +280,24 @@ function Trajetoria({ dossie, isAdmin }: { dossie: Dossie; isAdmin: boolean }) {
             <Briefcase size={13} /> Cargo atual
           </div>
           {editing ? (
-            <input
-              value={cargoAtual}
-              onChange={(e) => setCargoAtual(e.target.value)}
-              className="mt-1 w-full rounded border border-line bg-bg-tertiary px-2 py-0.5 text-[13px] text-ink-primary focus:border-brand focus:outline-none"
-            />
+            opcoesCargo(diretoriaAtual).length > 0 ? (
+              <select
+                value={opcoesCargo(diretoriaAtual).includes(cargoAtual) ? cargoAtual : ''}
+                onChange={(e) => setCargoAtual(e.target.value)}
+                className="mt-1 w-full rounded border border-line bg-bg-tertiary px-2 py-1 text-[13px] text-ink-primary focus:border-brand focus:outline-none"
+              >
+                <option value="" disabled>Selecione o cargo…</option>
+                {opcoesCargo(diretoriaAtual).map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            ) : (
+              <input
+                value={cargoAtual}
+                onChange={(e) => setCargoAtual(e.target.value)}
+                className="mt-1 w-full rounded border border-line bg-bg-tertiary px-2 py-0.5 text-[13px] text-ink-primary focus:border-brand focus:outline-none"
+              />
+            )
           ) : (
-            <div className="mt-1 text-[13px] font-medium text-ink-primary">{savedCargo}</div>
+            <div className="mt-1 text-[13px] font-medium text-ink-primary">{dossie.colaborador.cargo}</div>
           )}
         </div>
       </div>
@@ -720,12 +752,14 @@ export function Perfil({
   setParticipacaoGTs,
   isAdmin,
   currentEmail,
+  onUpdateColaborador,
 }: {
   dossie: Dossie
   participacaoGTs: ParticipacaoGT[]
   setParticipacaoGTs: React.Dispatch<React.SetStateAction<ParticipacaoGT[]>>
   isAdmin: boolean
   currentEmail: string | null
+  onUpdateColaborador: (patch: Partial<Colaborador>) => void
 }) {
   const [avaliacao, setAvaliacao] = useState<AvaliacaoDesenvolvimento>(dossie.avaliacaoDesenvolvimento)
 
@@ -733,7 +767,7 @@ export function Perfil({
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <DadosMembro dossie={dossie} cargoAtual={dossie.colaborador.cargo} isAdmin={isAdmin} currentEmail={currentEmail} />
-        <Trajetoria dossie={dossie} isAdmin={isAdmin} />
+        <Trajetoria dossie={dossie} isAdmin={isAdmin} onUpdateColaborador={onUpdateColaborador} />
       </div>
 
       <GtsPorCiclo participacaoGTs={participacaoGTs} setParticipacaoGTs={setParticipacaoGTs} isAdmin={isAdmin} />

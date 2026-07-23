@@ -13,6 +13,8 @@ interface UseDossieResult {
   setSelectedId: (id: string | null) => void
   addMembro: (colab: Colaborador) => void
   removeMembro: (id: string) => void
+  /** Atualiza cargo/diretoria (ou outros campos do colaborador) de um membro existente. */
+  updateMembro: (id: string, patch: Partial<Colaborador>) => void
   /** Resolve o id do dossiê vinculado a um e-mail (mock local ou Supabase). Usado no login do membro comum. */
   resolveIdByEmail: (email: string) => Promise<string | null>
   loading: boolean
@@ -80,14 +82,35 @@ function saveRemovidos(ids: Set<string>) {
   localStorage.setItem(LS_REMOVIDOS, JSON.stringify([...ids]))
 }
 
+const LS_EDITS = 'dossie_membros_edits'
+
+// Alterações (cargo/diretoria etc.) feitas em membros "de fábrica"
+// (MOCK_MEMBROS) — mesmo problema da remoção: não dá pra mutar o array
+// const, então guardamos um patch por id e aplicamos por cima em tudo que
+// lista/lê membros.
+function loadEdits(): Record<string, Partial<Colaborador>> {
+  try { return JSON.parse(localStorage.getItem(LS_EDITS) ?? '{}') } catch { return {} }
+}
+function saveEdits(edits: Record<string, Partial<Colaborador>>) {
+  localStorage.setItem(LS_EDITS, JSON.stringify(edits))
+}
+function aplicarEdits(d: Dossie, edits: Record<string, Partial<Colaborador>>): Dossie {
+  const patch = edits[d.colaborador.id]
+  if (!patch) return d
+  return { ...d, colaborador: { ...d.colaborador, ...patch } }
+}
+
 const source: DataSource = isSupabaseConfigured ? 'supabase' : 'mock'
 
 export function useDossie(): UseDossieResult {
   // Mock extras (membros criados pelo coordenador)
   const [extras, setExtras] = useState<Dossie[]>(loadExtras)
   const [removidos, setRemovidos] = useState<Set<string>>(loadRemovidos)
+  const [edits, setEdits] = useState<Record<string, Partial<Colaborador>>>(loadEdits)
 
-  const allMock: Dossie[] = [...MOCK_MEMBROS, ...extras].filter((d) => !removidos.has(d.colaborador.id))
+  const allMock: Dossie[] = [...MOCK_MEMBROS, ...extras]
+    .filter((d) => !removidos.has(d.colaborador.id))
+    .map((d) => aplicarEdits(d, edits))
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [dossie, setDossie] = useState<Dossie | null>(null)
@@ -156,7 +179,7 @@ export function useDossie(): UseDossieResult {
       })
 
     return () => { active = false }
-  }, [selectedId, extras, removidos])
+  }, [selectedId, extras, removidos, edits])
 
   function addMembro(colab: Colaborador) {
     const novo = criarDossieBase(colab)
@@ -225,6 +248,49 @@ export function useDossie(): UseDossieResult {
     }
   }
 
+  function updateMembro(id: string, patch: Partial<Colaborador>) {
+    // Membro criado neste navegador (extras) — edita o dossiê guardado ali.
+    const extraIdx = extras.findIndex((d) => d.colaborador.id === id)
+    if (extraIdx >= 0) {
+      const updated = extras.map((d, i) => (i === extraIdx ? { ...d, colaborador: { ...d.colaborador, ...patch } } : d))
+      setExtras(updated)
+      saveExtras(updated)
+      if (dossie?.colaborador.id === id) setDossie((prev) => (prev ? { ...prev, colaborador: { ...prev.colaborador, ...patch } } : prev))
+      return
+    }
+
+    // Membro "de fábrica" — guarda o patch por cima (ver aplicarEdits).
+    if (MOCK_MEMBROS.some((d) => d.colaborador.id === id)) {
+      const updatedEdits = { ...edits, [id]: { ...edits[id], ...patch } }
+      setEdits(updatedEdits)
+      saveEdits(updatedEdits)
+      if (dossie?.colaborador.id === id) setDossie((prev) => (prev ? { ...prev, colaborador: { ...prev.colaborador, ...patch } } : prev))
+      return
+    }
+
+    // Membro que só existe no Supabase — atualiza de verdade lá (RLS exige admin).
+    setSupabaseMembros((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
+    if (dossie?.colaborador.id === id) setDossie((prev) => (prev ? { ...prev, colaborador: { ...prev.colaborador, ...patch } } : prev))
+    if (supabase) {
+      const dbPatch: Record<string, unknown> = {}
+      if (patch.cargo !== undefined) dbPatch.cargo = patch.cargo
+      if (patch.area !== undefined) dbPatch.area = patch.area
+      if (patch.nome !== undefined) dbPatch.nome = patch.nome
+      if (patch.matricula !== undefined) dbPatch.matricula = patch.matricula
+      if (patch.iniciais !== undefined) dbPatch.iniciais = patch.iniciais
+      if (patch.email !== undefined) dbPatch.email = patch.email || null
+      if (Object.keys(dbPatch).length > 0) {
+        supabase
+          .from('colaboradores')
+          .update(dbPatch)
+          .eq('id', id)
+          .then(({ error: err }) => {
+            if (err) console.warn('Não foi possível atualizar no Supabase:', err.message)
+          })
+      }
+    }
+  }
+
   async function resolveIdByEmail(email: string): Promise<string | null> {
     const local = allMock.find((d) => d.colaborador.email === email)
     if (local) return local.colaborador.id
@@ -242,6 +308,7 @@ export function useDossie(): UseDossieResult {
     setSelectedId,
     addMembro,
     removeMembro,
+    updateMembro,
     resolveIdByEmail,
     loading,
     error,

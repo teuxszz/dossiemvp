@@ -16,7 +16,7 @@ import { useAuth } from './hooks/useAuth'
 import { useTheme } from './hooks/useTheme'
 import { farolDe } from './lib/pdaa'
 import { computeMediaTime } from './lib/mockData'
-import type { Dossie, Feedback, RegistroConduta, EventoTimeline, KpiCiclo, SnapshotCiclo, ConfigCiclo, GrupoTrabalho, ParticipacaoGT } from './lib/types'
+import type { Dossie, Feedback, RegistroConduta, EventoTimeline, KpiCiclo, SnapshotCiclo, ConfigCiclo, GrupoTrabalho, ParticipacaoGT, Colaborador } from './lib/types'
 import type { DataSource } from './hooks/useDossie'
 
 const LS_RESPONSES = 'dossie_feedback_responses'
@@ -73,7 +73,7 @@ export function App() {
 
 // Camada de navegação — decide entre HomeView e DossierView
 function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin: boolean; onSignOut: () => void }) {
-  const { dossie, membros, allDossies, selectedId, setSelectedId, addMembro, removeMembro, resolveIdByEmail, loading, error, source } = useDossie()
+  const { dossie, membros, allDossies, selectedId, setSelectedId, addMembro, removeMembro, updateMembro, resolveIdByEmail, loading, error, source } = useDossie()
   const { theme, toggle } = useTheme()
   const [resolvingOwn, setResolvingOwn] = useState(false)
   const [ownNotFound, setOwnNotFound] = useState(false)
@@ -127,6 +127,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
         isAdmin={false}
         currentEmail={email}
         onSignOut={onSignOut}
+        onUpdateMembro={updateMembro}
       />
     )
   }
@@ -139,6 +140,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
         onSelect={setSelectedId}
         onAddMembro={addMembro}
         onRemoveMembro={removeMembro}
+        onUpdateMembro={updateMembro}
         theme={theme}
         onToggleTheme={toggle}
         onSignOut={onSignOut}
@@ -159,6 +161,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
       isAdmin
       currentEmail={email}
       onSignOut={onSignOut}
+      onUpdateMembro={updateMembro}
     />
   )
 }
@@ -176,9 +179,10 @@ interface DossierViewProps {
   isAdmin: boolean
   currentEmail: string | null
   onSignOut: () => void
+  onUpdateMembro: (id: string, patch: Partial<Colaborador>) => void
 }
 
-function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack, isAdmin, currentEmail, onSignOut }: DossierViewProps) {
+function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack, isAdmin, currentEmail, onSignOut, onUpdateMembro }: DossierViewProps) {
   const mediaTimeKpis = useMemo(() => computeMediaTime(allDossies), [allDossies])
   const [tab, setTab] = useState<TabKey>('dashboard')
 
@@ -346,6 +350,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   setParticipacaoGTs={setParticipacaoGTs}
                   isAdmin={isAdmin}
                   currentEmail={currentEmail}
+                  onUpdateColaborador={(patch) => onUpdateMembro(dossie.colaborador.id, patch)}
                 />
               )}
               {tab === 'pdaa' && (
