@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, Legend,
 } from 'recharts'
@@ -46,6 +46,8 @@ interface Props {
 }
 
 export function TeamDashboard({ allDossies, onSelectMembro }: Props) {
+  const [visaoPdaa, setVisaoPdaa] = useState<'membro' | 'diretoria'>('membro')
+
   const stats: MemberStat[] = useMemo(() =>
     allDossies.map((d) => {
       const pontosPdaa = d.pdaa.condutasRegistradas.reduce((s, r) => s + r.pontos, 0)
@@ -94,15 +96,39 @@ export function TeamDashboard({ allDossies, onSelectMembro }: Props) {
   ).sort((a, b) => b[1].total - a[1].total)
 
   // Dados para o gráfico de barras (PDAA por membro)
-  const chartData = [...stats]
+  const chartDataPorMembro = [...stats]
     .sort((a, b) => b.pontosPdaa - a.pontosPdaa)
     .map((s) => ({
       nome: s.nome.split(' ')[0],
       nomeCompleto: s.nome,
       pontos: s.pontosPdaa,
       nivel: s.farolNivel,
-      id: s.id,
+      id: s.id as string | undefined,
+      membros: undefined as number | undefined,
     }))
+
+  // Mesmos dados, agregados por diretoria (média de pontos PDAA do grupo)
+  const chartDataPorDiretoria = Object.entries(
+    stats.reduce<Record<string, number[]>>((acc, s) => {
+      if (!acc[s.area]) acc[s.area] = []
+      acc[s.area].push(s.pontosPdaa)
+      return acc
+    }, {}),
+  )
+    .map(([diretoria, pontos]) => {
+      const media = avg(pontos)
+      return {
+        nome: diretoria.replace('Diretoria de ', ''),
+        nomeCompleto: diretoria,
+        pontos: media,
+        nivel: farolDe(media).nivel,
+        id: undefined as string | undefined,
+        membros: pontos.length as number | undefined,
+      }
+    })
+    .sort((a, b) => b.pontos - a.pontos)
+
+  const chartData = visaoPdaa === 'membro' ? chartDataPorMembro : chartDataPorDiretoria
 
   const kpiChartData = comKpi.map((s) => ({
     nome: s.nome.split(' ')[0],
@@ -202,12 +228,38 @@ export function TeamDashboard({ allDossies, onSelectMembro }: Props) {
         </Card>
       </div>
 
-      {/* Gráfico PDAA por membro */}
+      {/* Gráfico PDAA por membro / por diretoria */}
       <Card className="p-4 sm:p-5">
-        <SectionTitle icon={<ShieldAlert size={15} />}>Pontuação PDAA por membro — {CICLO_ATUAL.ano} {CICLO_ATUAL.ciclo}</SectionTitle>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <SectionTitle icon={<ShieldAlert size={15} />}>
+            Pontuação PDAA {visaoPdaa === 'membro' ? 'por membro' : 'por diretoria'} — {CICLO_ATUAL.ano} {CICLO_ATUAL.ciclo}
+          </SectionTitle>
+          <div className="flex rounded-lg border border-line bg-bg-secondary p-0.5">
+            <button
+              onClick={() => setVisaoPdaa('membro')}
+              className={cn('rounded-md px-3 py-1 text-[11px] font-medium transition-colors', visaoPdaa === 'membro' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
+            >
+              Por membro
+            </button>
+            <button
+              onClick={() => setVisaoPdaa('diretoria')}
+              className={cn('rounded-md px-3 py-1 text-[11px] font-medium transition-colors', visaoPdaa === 'diretoria' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
+            >
+              Por diretoria
+            </button>
+          </div>
+        </div>
         <div className="mt-3 h-56">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} barSize={28} onClick={(d) => { const id = (d as { activePayload?: Array<{ payload?: { id?: string } }> })?.activePayload?.[0]?.payload?.id; if (id) onSelectMembro(id) }}>
+            <BarChart
+              data={chartData}
+              barSize={28}
+              onClick={(d) => {
+                if (visaoPdaa !== 'membro') return
+                const id = (d as { activePayload?: Array<{ payload?: { id?: string } }> })?.activePayload?.[0]?.payload?.id
+                if (id) onSelectMembro(id)
+              }}
+            >
               <XAxis dataKey="nome" tick={{ fontSize: 11, fill: 'var(--color-ink-secondary)' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: 'var(--color-ink-tertiary)' }} axisLine={false} tickLine={false} />
               <Tooltip
@@ -218,14 +270,14 @@ export function TeamDashboard({ allDossies, onSelectMembro }: Props) {
                   return (
                     <div className="rounded-lg border border-line bg-bg-primary px-3 py-2 shadow-md text-xs">
                       <p className="font-medium text-ink-primary">{d.nomeCompleto}</p>
-                      <p className={cfg.text}>{cfg.label} · {d.pontos} pts</p>
+                      <p className={cfg.text}>{cfg.label} · {d.pontos} pts{visaoPdaa === 'diretoria' ? ` (média de ${d.membros} membro${d.membros !== 1 ? 's' : ''})` : ''}</p>
                     </div>
                   )
                 }}
               />
               <ReferenceLine y={7}  stroke="#f59e0b" strokeDasharray="4 3" strokeWidth={1.5} label={{ value: 'Amarelo', position: 'right', fontSize: 10, fill: '#f59e0b' }} />
               <ReferenceLine y={13} stroke="#f43f5e" strokeDasharray="4 3" strokeWidth={1.5} label={{ value: 'Vermelho', position: 'right', fontSize: 10, fill: '#f43f5e' }} />
-              <Bar dataKey="pontos" radius={[4, 4, 0, 0]} cursor="pointer">
+              <Bar dataKey="pontos" radius={[4, 4, 0, 0]} cursor={visaoPdaa === 'membro' ? 'pointer' : 'default'}>
                 {chartData.map((entry, i) => (
                   <Cell key={i} fill={BAR_COLORS[entry.nivel as keyof typeof BAR_COLORS]} fillOpacity={0.85} />
                 ))}
@@ -233,7 +285,11 @@ export function TeamDashboard({ allDossies, onSelectMembro }: Props) {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <p className="mt-2 text-[11px] text-ink-tertiary">Clique em uma barra para abrir o dossiê do membro. Linhas tracejadas = limiares do farol.</p>
+        <p className="mt-2 text-[11px] text-ink-tertiary">
+          {visaoPdaa === 'membro'
+            ? 'Clique em uma barra para abrir o dossiê do membro. Linhas tracejadas = limiares do farol.'
+            : 'Média de pontos PDAA por diretoria neste ciclo. Linhas tracejadas = limiares do farol.'}
+        </p>
       </Card>
 
       {/* KPIs por membro (se houver dados) */}
