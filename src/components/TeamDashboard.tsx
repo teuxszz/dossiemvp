@@ -302,7 +302,12 @@ export function TeamDashboard({ allDossies, onSelectMembro, cicloGlobal }: Props
               <BarChart data={kpiChartData} barGap={2} barCategoryGap="30%">
                 <XAxis dataKey="nome" tick={{ fontSize: 11, fill: 'var(--color-ink-secondary)' }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--color-ink-tertiary)' }} axisLine={false} tickLine={false} unit="%" />
-                <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Tooltip
+                  formatter={(v) => `${v}%`}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, background: 'var(--color-bg-primary)', border: '1px solid var(--color-line-strong)', color: 'var(--color-ink-primary)' }}
+                  labelStyle={{ color: 'var(--color-ink-primary)', fontWeight: 600 }}
+                  itemStyle={{ color: 'var(--color-ink-secondary)' }}
+                />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Engajamento" fill="#38bdf8" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="PCO"         fill="#818cf8" radius={[3, 3, 0, 0]} />

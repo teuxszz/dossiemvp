@@ -32,6 +32,11 @@ const tooltipStyle = {
   color: 'var(--ink-primary)',
 }
 
+// Recharts colore o texto de cada item pela cor da série por padrão — em fundo
+// escuro isso fica ilegível quando a cor é escura. Força contraste fixo.
+const tooltipLabelStyle = { color: 'var(--ink-primary)', fontWeight: 600, marginBottom: 2 }
+const tooltipItemStyle = { color: 'var(--ink-secondary)' }
+
 const KPI_SERIES = [
   { key: 'engajamento', label: 'Engajamento', color: '#008bad' },
   { key: 'pco', label: 'PCO', color: '#f6a823' },
@@ -70,7 +75,7 @@ export function KpisPorCicloChart({ data, cicloAtual }: { data: KpiCiclo[]; cicl
           tickLine={false}
         />
         <YAxis domain={[0, 100]} tick={AXIS} axisLine={false} tickLine={false} />
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--bg-secondary)' }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: 'var(--bg-secondary)' }} />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         {KPI_SERIES.map((s) => (
           <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} radius={[3, 3, 0, 0]} />
@@ -89,7 +94,7 @@ export function RadarCompetencias({ data }: { data: Competencia[] }) {
         <PolarAngleAxis dataKey="eixo" tick={{ fontSize: 11, fill: 'var(--ink-secondary)' }} />
         <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: 'var(--ink-tertiary)' }} stroke={GRID} />
         <Radar dataKey="valor" stroke="#008bad" fill="#008bad" fillOpacity={0.22} strokeWidth={2} />
-        <Tooltip contentStyle={tooltipStyle} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} />
       </RadarChart>
     </ResponsiveContainer>
   )
@@ -102,7 +107,7 @@ export function TendenciaScore({ data }: { data: ScorePonto[] }) {
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
         <XAxis dataKey="trimestre" tick={AXIS} axisLine={false} tickLine={false} />
         <YAxis domain={[60, 100]} tick={AXIS} axisLine={false} tickLine={false} />
-        <Tooltip contentStyle={tooltipStyle} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} />
         <Line
           type="monotone"
           dataKey="score"
@@ -151,6 +156,8 @@ export function PontuacaoPorCicloChart({ data, cicloAtual }: { data: PontuacaoCi
         <YAxis domain={[0, max]} tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
         <Tooltip
           contentStyle={tooltipStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
           cursor={{ fill: 'var(--bg-secondary)' }}
           formatter={(v, _name, props) => {
             const isAtual = cicloAtual && props.payload?.ciclo === cicloAtual
@@ -183,7 +190,7 @@ export function AbonosPorCicloChart({ data }: { data: AbonoCiclo[] }) {
         <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
         <XAxis dataKey="ciclo" tick={AXIS} axisLine={false} tickLine={false} />
         <YAxis domain={[0, max]} tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--bg-secondary)' }} formatter={(v) => [`${v} abono(s)`, 'Usados']} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: 'var(--bg-secondary)' }} formatter={(v) => [`${v} abono(s)`, 'Usados']} />
         <Bar dataKey="usados" fill="#20b691" radius={[3, 3, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
