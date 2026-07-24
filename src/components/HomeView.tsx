@@ -724,7 +724,7 @@ function MembroCard({
         <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[15px] font-bold', corPorId(m.id))}>
           {m.iniciais}
         </div>
-        <div className="min-w-0 flex-1 pr-6">
+        <div className="min-w-0 flex-1 pr-24">
           <p className="truncate text-[13px] font-semibold text-ink-primary group-hover:text-brand">{m.nome}</p>
           <div className="mt-1.5 flex flex-wrap gap-1">
             <span className="truncate rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] text-brand">{m.cargo}</span>
