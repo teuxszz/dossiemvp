@@ -211,6 +211,7 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
     { key: 'administradores', label: 'Administradores', icon: <UserCog size={17} /> },
     { key: 'seguranca', label: 'Segurança', icon: <ShieldCheck size={17} /> },
   ]
+  const tituloAtivo = NAV_GERAL.find((n) => n.key === activeTab)?.label ?? ''
 
   return (
     <div className="flex min-h-screen bg-bg-tertiary">
@@ -278,7 +279,8 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
       <div className="min-w-0 flex-1">
         {/* Topbar do conteúdo */}
         <header className="sticky top-0 z-10 border-b border-line bg-bg-primary px-6 py-4">
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="font-display text-[15px] font-semibold text-ink-primary">{tituloAtivo}</h1>
             {activeTab === 'membros' && !quadroBloqueado && (
               <button
                 onClick={() => setShowNovo(true)}
