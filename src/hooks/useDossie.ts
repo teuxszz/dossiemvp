@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { MOCK_MEMBROS, criarDossieBase } from '@/lib/mockData'
+import { MOCK_MEMBROS, MOCK_DOSSIE, criarDossieBase } from '@/lib/mockData'
 import type { Colaborador, Dossie } from '@/lib/types'
 
 export type DataSource = 'supabase' | 'mock'
@@ -38,9 +38,8 @@ interface ColaboradorRow {
   dados: Omit<Dossie, 'colaborador'>
 }
 
-const [mockDossie0] = MOCK_MEMBROS
 function rowToDossie(row: ColaboradorRow): Dossie {
-  const { colaborador: _mockColab, ...mockRest } = mockDossie0
+  const { colaborador: _mockColab, ...mockRest } = MOCK_DOSSIE
   const merged = { ...mockRest, ...row.dados }
   const ciclosOk =
     Array.isArray(merged.kpisPorCiclo) &&

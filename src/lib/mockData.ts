@@ -370,71 +370,18 @@ function membro(
   return base
 }
 
-// Todos os membros disponíveis no modo mock.
-// Carlos (MOCK_DOSSIE) tem dados completos; os demais têm KPIs dos ciclos recentes.
+// Todos os membros reais da CONSEJ (organograma). MOCK_DOSSIE (Carlos) não
+// entra aqui — é só um exemplo fictício usado como template de dados-padrão
+// (ver useDossie.ts), nunca aparece como membro de verdade no app.
 export const MOCK_MEMBROS: Dossie[] = [
-  MOCK_DOSSIE,
-  membro('ana-lima', 'Ana Lima', 'Diretora de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'AL', 'Ago 2024', [
-    { ano: 2025, ciclo: 'C1', engajamento: 82, pco: 70, pdaa: 0, entregas: 85 },
-    { ano: 2025, ciclo: 'C2', engajamento: 85, pco: 73, pdaa: 0, entregas: 88 },
-    { ano: 2025, ciclo: 'C3', engajamento: 83, pco: 71, pdaa: 0, entregas: 86 },
-    { ano: 2025, ciclo: 'C4', engajamento: 86, pco: 74, pdaa: 0, entregas: 89 },
-    { ano: 2026, ciclo: 'C1', engajamento: 84, pco: 72, pdaa: 0, entregas: 87 },
-    { ano: 2026, ciclo: 'C2', engajamento: 88, pco: 75, pdaa: 0, entregas: 91 },
-  ]),
-  membro('rafael-drum', 'Rafael Drummond', 'Gerente de Negócios', 'Diretoria de Negócios', 'RD', 'Mar 2025', [
-    { ano: 2025, ciclo: 'C2', engajamento: 75, pco: 63, pdaa: 0, entregas: 78 },
-    { ano: 2025, ciclo: 'C3', engajamento: 78, pco: 65, pdaa: 0, entregas: 80 },
-    { ano: 2025, ciclo: 'C4', engajamento: 80, pco: 67, pdaa: 0, entregas: 83 },
-    { ano: 2026, ciclo: 'C1', engajamento: 79, pco: 66, pdaa: 0, entregas: 82 },
-    { ano: 2026, ciclo: 'C2', engajamento: 81, pco: 68, pdaa: 0, entregas: 85 },
-  ]),
-  membro('mariana-costa', 'Mariana Costa', 'Gerente de Demandas', 'Diretoria de Demandas', 'MC', 'Jan 2025', [
-    { ano: 2025, ciclo: 'C1', engajamento: 79, pco: 68, pdaa: 0, entregas: 83 },
-    { ano: 2025, ciclo: 'C2', engajamento: 82, pco: 70, pdaa: 0, entregas: 85 },
-    { ano: 2025, ciclo: 'C3', engajamento: 80, pco: 69, pdaa: 0, entregas: 84 },
-    { ano: 2025, ciclo: 'C4', engajamento: 83, pco: 71, pdaa: 0, entregas: 87 },
-    { ano: 2026, ciclo: 'C1', engajamento: 82, pco: 70, pdaa: 0, entregas: 86 },
-    { ano: 2026, ciclo: 'C2', engajamento: 85, pco: 72, pdaa: 0, entregas: 89 },
-  ]),
-  membro('pedro-alves', 'Pedro Alves', 'Presidente Executivo', 'Diretoria de Presidência', 'PA', 'Fev 2024', [
-    { ano: 2024, ciclo: 'C1', engajamento: 88, pco: 78, pdaa: 0, entregas: 90 },
-    { ano: 2024, ciclo: 'C2', engajamento: 90, pco: 80, pdaa: 0, entregas: 92 },
-    { ano: 2024, ciclo: 'C3', engajamento: 91, pco: 81, pdaa: 0, entregas: 93 },
-    { ano: 2024, ciclo: 'C4', engajamento: 92, pco: 82, pdaa: 0, entregas: 94 },
-    { ano: 2025, ciclo: 'C1', engajamento: 90, pco: 80, pdaa: 0, entregas: 93 },
-    { ano: 2025, ciclo: 'C2', engajamento: 92, pco: 82, pdaa: 0, entregas: 95 },
-    { ano: 2025, ciclo: 'C3', engajamento: 91, pco: 81, pdaa: 0, entregas: 94 },
-    { ano: 2025, ciclo: 'C4', engajamento: 93, pco: 83, pdaa: 0, entregas: 96 },
-    { ano: 2026, ciclo: 'C1', engajamento: 92, pco: 82, pdaa: 0, entregas: 95 },
-    { ano: 2026, ciclo: 'C2', engajamento: 94, pco: 84, pdaa: 0, entregas: 97 },
-  ]),
-  membro('julia-santos', 'Julia Santos', 'Vice Presidente', 'Diretoria de Vice-Presidência', 'JS', 'Set 2024', [
-    { ano: 2024, ciclo: 'C4', engajamento: 77, pco: 65, pdaa: 0, entregas: 80 },
-    { ano: 2025, ciclo: 'C1', engajamento: 79, pco: 67, pdaa: 0, entregas: 82 },
-    { ano: 2025, ciclo: 'C2', engajamento: 81, pco: 69, pdaa: 0, entregas: 84 },
-    { ano: 2025, ciclo: 'C3', engajamento: 80, pco: 68, pdaa: 0, entregas: 83 },
-    { ano: 2025, ciclo: 'C4', engajamento: 82, pco: 70, pdaa: 0, entregas: 85 },
-    { ano: 2026, ciclo: 'C1', engajamento: 83, pco: 71, pdaa: 0, entregas: 86 },
-    { ano: 2026, ciclo: 'C2', engajamento: 85, pco: 73, pdaa: 0, entregas: 88 },
-  ]),
-  membro('lucas-mendes', 'Lucas Mendes', 'Gerente de Marketing', 'Diretoria de Marketing', 'LM', 'Nov 2024', [
-    { ano: 2024, ciclo: 'C4', engajamento: 72, pco: 60, pdaa: 0, entregas: 75 },
-    { ano: 2025, ciclo: 'C1', engajamento: 74, pco: 62, pdaa: 0, entregas: 77 },
-    { ano: 2025, ciclo: 'C2', engajamento: 76, pco: 64, pdaa: 0, entregas: 79 },
-    { ano: 2025, ciclo: 'C3', engajamento: 75, pco: 63, pdaa: 0, entregas: 78 },
-    { ano: 2025, ciclo: 'C4', engajamento: 78, pco: 66, pdaa: 0, entregas: 81 },
-    { ano: 2026, ciclo: 'C1', engajamento: 77, pco: 65, pdaa: 0, entregas: 80 },
-    { ano: 2026, ciclo: 'C2', engajamento: 80, pco: 67, pdaa: 0, entregas: 83 },
-  ]),
 
   // ---- Quadro completo importado do organograma — sem dados de desempenho ainda ----
 
   // Diretoria executiva
   membro('ana-luiza-medeiros', 'Ana Luiza Cortez de Medeiros', 'Diretora de Demandas', 'Diretoria de Demandas', 'AL', '', [],
-    { cargoSecundario: 'Presidente Executiva', areaSecundaria: 'Diretoria de Presidência' }),
+    { cargoSecundario: 'Presidente Executiva', areaSecundaria: 'Diretoria de Presidência' }, 'ana.cortez@consej.com.br'),
   membro('gabi-domingues', 'Gabi Domingues', 'Diretora de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'GD', '', [],
-    { cargoSecundario: 'Vice-Presidente', areaSecundaria: 'Diretoria de Vice-Presidência' }),
+    { cargoSecundario: 'Vice-Presidente', areaSecundaria: 'Diretoria de Vice-Presidência' }, 'gabriela.domingues@consej.com.br'),
   membro('luna-cavalcanti', 'Luna Cavalcanti Ferreira de Melo', 'Diretora de Negócios', 'Diretoria de Negócios', 'LC', '', [],
     { cargoSecundario: 'Diretora de Marketing', areaSecundaria: 'Diretoria de Marketing' }, 'luna.melo@consej.com.br'),
 
@@ -450,12 +397,12 @@ export const MOCK_MEMBROS: Dossie[] = [
   membro('ruan-moura', 'Ruan Hagno de Assis Moura', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'RH', '', [], undefined, 'ruan.hagno@consej.com.br'),
 
   // Coordenadoria de Demandas
-  membro('andre-mendonca', 'André Mendonça', 'Coordenadoria de Clientes', 'Diretoria de Demandas', 'AM', ''),
+  membro('andre-mendonca', 'André Mendonça', 'Coordenadoria de Clientes', 'Diretoria de Demandas', 'AM', '', [], undefined, 'andre.vinicius@consej.com.br'),
   membro('arthur-nunes', 'Arthur Maia Nunes', 'Coordenadoria de Procedimentos Internos', 'Diretoria de Demandas', 'AM', '', [], undefined, 'arthur.maia@consej.com.br'),
   membro('gustavo-henrique', 'Gustavo Henrique', 'Coordenadoria de Procedimentos Internos', 'Diretoria de Demandas', 'GH', '', [], undefined, 'gustavo.henrique@consej.com.br'),
 
   // Coordenadoria de Marketing
-  membro('ana-carolina-oliveira', 'Ana Carolina Azevedo Oliveira', 'Coordenadoria de Social Media', 'Diretoria de Marketing', 'AC', ''),
+  membro('ana-carolina-oliveira', 'Ana Carolina Azevedo Oliveira', 'Coordenadoria de Social Media', 'Diretoria de Marketing', 'AC', '', [], undefined, 'ana.carolina@consej.com.br'),
   membro('fernanda-amorim', 'Fernanda Sâmara Rodrigues Amorim', 'Coordenadoria de Inbound Marketing', 'Diretoria de Marketing', 'FS', '', [], undefined, 'fernanda.samara@consej.com.br'),
   membro('valentina-vicioli', 'Valentina Vanzato Vicioli', 'Coordenadoria de Social Media', 'Diretoria de Marketing', 'VV', '', [], undefined, 'valentina.vicioli@consej.com.br'),
 
@@ -467,7 +414,7 @@ export const MOCK_MEMBROS: Dossie[] = [
 
   // Coordenadoria de Pesquisas e Pessoas
   membro('guilherme-chaves-silva', 'Guilherme Chaves Lopes de Lima e Silva', 'Coordenadoria de Experiência do Time', 'Diretoria de Pesquisas e Pessoas', 'GC', '', [], undefined, 'guilherme.chaves@consej.com.br'),
-  membro('lara-barros', 'Lara Gomes Pereira Barros', 'Coordenadoria de Experiência do Time', 'Diretoria de Pesquisas e Pessoas', 'LG', ''),
+  membro('lara-barros', 'Lara Gomes Pereira Barros', 'Coordenadoria de Experiência do Time', 'Diretoria de Pesquisas e Pessoas', 'LG', '', [], undefined, 'lara.gomes@consej.com.br'),
 
   // Coordenadoria de Presidência
   membro('joao-vitor-silva', 'João Vitor Pessoa Silva', 'Coordenadoria de Parcerias', 'Diretoria de Presidência', 'JV', '', [], undefined, 'joao.pessoa@consej.com.br'),
@@ -479,7 +426,7 @@ export const MOCK_MEMBROS: Dossie[] = [
   membro('gabriel-araujo', 'Gabriel Araujo', 'Coordenadoria de Finanças', 'Diretoria de Vice-Presidência', 'GA', '', [], undefined, 'gabriel.lima@consej.com.br'),
   membro('ivyson-melo', 'Ivyson Henrique Oliveira Melo', 'Coordenadoria de Estratégia', 'Diretoria de Vice-Presidência', 'IH', '', [], undefined, 'ivyson.henrique@consej.com.br'),
   membro('leticia-caldas', 'Leticia Gomes Maia Caldas', 'Coordenadoria de Estratégia', 'Diretoria de Vice-Presidência', 'LG', '', [], undefined, 'leticia.caldas@consej.com.br'),
-  membro('mateus-almeida', 'Mateus Oliveira de Almeida', 'Coordenadoria de Inovação', 'Diretoria de Vice-Presidência', 'MO', ''),
+  membro('mateus-almeida', 'Mateus Oliveira de Almeida', 'Coordenadoria de Inovação', 'Diretoria de Vice-Presidência', 'MO', '', [], undefined, 'mateus.oliveira@consej.com.br'),
 ]
 
 // Computa a média real de KPIs do time a partir de todos os dossiês.
