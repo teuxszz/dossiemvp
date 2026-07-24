@@ -363,6 +363,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   isAdmin={isAdmin}
                   currentEmail={currentEmail}
                   onUpdateColaborador={(patch) => onUpdateMembro(dossie.colaborador.id, patch)}
+                  onUpdatePerfilLocal={(patch) => onUpdateDossieData(dossie.colaborador.id, { perfil: { ...dossie.perfil, ...patch } })}
                 />
               )}
               {tab === 'pdaa' && (

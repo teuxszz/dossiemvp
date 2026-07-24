@@ -45,11 +45,13 @@ function DadosMembro({
   cargoAtual,
   isAdmin,
   currentEmail,
+  onUpdatePerfilLocal,
 }: {
   dossie: Dossie
   cargoAtual: string
   isAdmin: boolean
   currentEmail: string | null
+  onUpdatePerfilLocal: (patch: Partial<PerfilType>) => void
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<PerfilType & { cargoAtual: string }>({
@@ -63,17 +65,32 @@ function DadosMembro({
   async function save() {
     setErro(null)
     if (!isAdmin) {
-      if (!currentEmail || !supabase) { setEditing(false); return }
-      setSalvando(true)
-      const { error } = await supabase.rpc('atualizar_perfil_proprio', {
-        p_celular: draft.celular,
-        p_email_contato: draft.email,
-        p_periodo_curso: draft.periodoCurso,
-        p_data_entrada: draft.dataEntrada,
-        p_nascimento: draft.nascimento,
-      })
-      setSalvando(false)
-      if (error) { setErro(error.message); return }
+      if (!currentEmail) { setEditing(false); return }
+      const { cargoAtual: _c, ...perfilPatch } = draft
+      if (supabase) {
+        setSalvando(true)
+        const { error } = await supabase.rpc('atualizar_perfil_proprio', {
+          p_celular: draft.celular,
+          p_email_contato: draft.email,
+          p_periodo_curso: draft.periodoCurso,
+          p_data_entrada: draft.dataEntrada,
+          p_nascimento: draft.nascimento,
+        })
+        setSalvando(false)
+        if (error) {
+          // Membro só existe localmente (ainda não migrado pro Supabase) —
+          // sem linha na tabela pra RPC atualizar. Aplica a edição local
+          // mesmo assim, em vez de travar o membro sem poder editar o próprio dossiê.
+          if (error.message.includes('Nenhum dossiê vinculado')) {
+            onUpdatePerfilLocal(perfilPatch)
+          } else {
+            setErro(error.message)
+            return
+          }
+        }
+      } else {
+        onUpdatePerfilLocal(perfilPatch)
+      }
     }
     setSaved(draft)
     setEditing(false)
@@ -748,6 +765,7 @@ export function Perfil({
   isAdmin,
   currentEmail,
   onUpdateColaborador,
+  onUpdatePerfilLocal,
 }: {
   dossie: Dossie
   participacaoGTs: ParticipacaoGT[]
@@ -755,13 +773,14 @@ export function Perfil({
   isAdmin: boolean
   currentEmail: string | null
   onUpdateColaborador: (patch: Partial<Colaborador>) => void
+  onUpdatePerfilLocal: (patch: Partial<PerfilType>) => void
 }) {
   const [avaliacao, setAvaliacao] = useState<AvaliacaoDesenvolvimento>(dossie.avaliacaoDesenvolvimento)
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <DadosMembro dossie={dossie} cargoAtual={dossie.colaborador.cargo} isAdmin={isAdmin} currentEmail={currentEmail} />
+        <DadosMembro dossie={dossie} cargoAtual={dossie.colaborador.cargo} isAdmin={isAdmin} currentEmail={currentEmail} onUpdatePerfilLocal={onUpdatePerfilLocal} />
         <Trajetoria dossie={dossie} isAdmin={isAdmin} onUpdateColaborador={onUpdateColaborador} />
       </div>
 

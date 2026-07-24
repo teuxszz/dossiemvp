@@ -211,7 +211,10 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
                           p_pontos_abonados: tipo.pontosMaximos,
                         })
                         setAbonoSalvando(false)
-                        if (error) {
+                        // "Nenhum dossiê vinculado": membro só existe localmente (seed do
+                        // organograma, ainda não migrado pro Supabase) — segue com o
+                        // registro local em vez de travar o membro sem poder usar o abono.
+                        if (error && !error.message.includes('Nenhum dossiê vinculado')) {
                           setAbonoErro(error.message)
                           return
                         }
