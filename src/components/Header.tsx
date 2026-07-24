@@ -43,8 +43,8 @@ export function Header({ colaborador, dossie, onBack, theme, onToggleTheme, sour
   }
 
   return (
-    <header className="border-b border-line bg-bg-primary px-4 py-4 sm:px-6">
-      <div className="flex items-center gap-3">
+    <header className="flex h-[68px] items-center border-b border-line bg-bg-primary px-4 sm:px-6">
+      <div className="flex w-full items-center gap-3">
         {/* Botão voltar (só existe pra admin — membro comum não tem lista pra voltar) */}
         {onBack && (
           <button

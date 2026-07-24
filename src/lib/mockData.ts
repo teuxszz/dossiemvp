@@ -97,10 +97,41 @@ export const MOCK_DOSSIE: Dossie = {
     interesses: ['Direito empresarial', 'Gestão de projetos', 'Mentoria', 'Dados & BI'],
   },
   pdi: [
-    { id: 'p1', titulo: 'Liderança situacional', progresso: 80 },
-    { id: 'p2', titulo: 'Gestão de stakeholders', progresso: 45 },
-    { id: 'p3', titulo: 'Comunicação executiva', progresso: 65 },
-    { id: 'p4', titulo: 'Análise de dados', progresso: 90 },
+    {
+      id: 'p1',
+      objetivo: 'Desenvolver liderança situacional',
+      descricao: 'Preparar Carlos para assumir squads maiores, adaptando o estilo de liderança ao nível de maturidade do time.',
+      prazo: '2026-06-30',
+      registradoPor: 'Coordenadoria de Desempenho',
+      atualizadoEm: '2026-05-10',
+      metas: [
+        { id: 'p1-m1', titulo: 'Concluir curso de liderança situacional', concluida: true },
+        { id: 'p1-m2', titulo: 'Liderar 1 squad em rodízio', concluida: true },
+        { id: 'p1-m3', titulo: 'Receber feedback 360 dos liderados', concluida: false },
+      ],
+    },
+    {
+      id: 'p2',
+      objetivo: 'Melhorar gestão de stakeholders',
+      prazo: '2026-08-31',
+      registradoPor: 'Coordenadoria de Desempenho',
+      atualizadoEm: '2026-04-02',
+      metas: [
+        { id: 'p2-m1', titulo: 'Mapear stakeholders-chave dos projetos ativos', concluida: true },
+        { id: 'p2-m2', titulo: 'Reunião mensal de alinhamento com diretoria', concluida: false },
+      ],
+    },
+    {
+      id: 'p3',
+      objetivo: 'Aprimorar comunicação executiva',
+      prazo: '2026-07-15',
+      registradoPor: 'Coordenadoria de Desempenho',
+      atualizadoEm: '2026-05-01',
+      metas: [
+        { id: 'p3-m1', titulo: 'Apresentar 1 relatório trimestral à diretoria', concluida: true },
+        { id: 'p3-m2', titulo: 'Workshop de comunicação assertiva', concluida: false },
+      ],
+    },
   ],
   feedbacks: [
     {

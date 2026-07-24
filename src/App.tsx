@@ -9,6 +9,7 @@ import { Pdaa } from './components/tabs/Pdaa'
 import { Historico } from './components/tabs/Historico'
 import { Feedbacks } from './components/tabs/Feedbacks'
 import { Entregas } from './components/tabs/Entregas'
+import { Pdi } from './components/tabs/Pdi'
 import { FeedbackForm } from './components/FeedbackForm'
 import { useDossie } from './hooks/useDossie'
 import { useAuth } from './hooks/useAuth'
@@ -16,12 +17,13 @@ import { useTheme } from './hooks/useTheme'
 import { useCicloGlobal, type UseCicloGlobal } from './hooks/useCicloGlobal'
 import { farolDe } from './lib/pdaa'
 import { computeMediaTime } from './lib/mockData'
-import type { Dossie, Feedback, RegistroConduta, EventoTimeline, KpiCiclo, SnapshotCiclo, ConfigCiclo, GrupoTrabalho, ParticipacaoGT, Colaborador } from './lib/types'
+import type { Dossie, Feedback, RegistroConduta, EventoTimeline, KpiCiclo, SnapshotCiclo, ConfigCiclo, GrupoTrabalho, ParticipacaoGT, Colaborador, ItemPdi } from './lib/types'
 import type { DataSource } from './hooks/useDossie'
 
 const LS_RESPONSES = 'dossie_feedback_responses'
 const LS_CICLO_CONFIG = 'dossie_ciclo_config'
 const LS_SNAPSHOTS = 'dossie_snapshots'
+const LS_PDI = 'dossie_pdi'
 
 interface StoredResponse extends Feedback {
   membroId: string
@@ -257,6 +259,27 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
     }
   }, [dossie?.colaborador.id])
 
+  // PDI — plano de desenvolvimento individual (registrado pela coordenadoria de
+  // desempenho, persistido por membro em localStorage pra sobreviver a reloads).
+  const [pdi, setPdi] = useState<ItemPdi[]>([])
+  useEffect(() => {
+    if (!dossie) return
+    try {
+      const all: Record<string, ItemPdi[]> = JSON.parse(localStorage.getItem(LS_PDI) ?? '{}')
+      setPdi(all[dossie.colaborador.id] ?? dossie.pdi)
+    } catch {
+      setPdi(dossie.pdi)
+    }
+  }, [dossie?.colaborador.id])
+
+  useEffect(() => {
+    if (!dossie) return
+    try {
+      const all: Record<string, ItemPdi[]> = JSON.parse(localStorage.getItem(LS_PDI) ?? '{}')
+      localStorage.setItem(LS_PDI, JSON.stringify({ ...all, [dossie.colaborador.id]: pdi }))
+    } catch { /* ignore */ }
+  }, [pdi, dossie?.colaborador.id])
+
   // Config de fechamento de ciclo
   const [configCiclo, setConfigCiclo] = useState<ConfigCiclo | null>(() => {
     try { return JSON.parse(localStorage.getItem(LS_CICLO_CONFIG) ?? 'null') } catch { return null }
@@ -377,6 +400,9 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   currentEmail={currentEmail}
                   cicloFechado={cicloFechado}
                 />
+              )}
+              {tab === 'pdi' && (
+                <Pdi pdi={pdi} setPdi={setPdi} isAdmin={isAdmin} currentEmail={currentEmail} />
               )}
               {tab === 'historico' && (
                 <Historico dossie={dossie} timeline={timeline} setTimeline={setTimeline} isAdmin={isAdmin} />

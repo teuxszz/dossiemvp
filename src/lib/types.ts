@@ -57,10 +57,20 @@ export interface ScorePonto {
   score: number
 }
 
-export interface ItemPdi {
+export interface MetaPdi {
   id: string
   titulo: string
-  progresso: number // 0-100
+  concluida: boolean
+}
+
+export interface ItemPdi {
+  id: string
+  objetivo: string       // objetivo principal
+  descricao?: string
+  metas: MetaPdi[]        // metas menores que compõem o objetivo
+  prazo?: string
+  registradoPor?: string  // coordenador de desempenho que registrou/atualizou
+  atualizadoEm?: string   // ISO date
 }
 
 export type CategoriaFeedback = 'positivo' | 'desenvolvimento' | 'gestor'

@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react'
-import { LayoutDashboard, IdCard, GitCommitVertical, MessageCircle, ShieldCheck, ShieldAlert, PackageCheck, CalendarClock } from 'lucide-react'
+import { LayoutDashboard, IdCard, GitCommitVertical, MessageCircle, ShieldCheck, ShieldAlert, PackageCheck, CalendarClock, Target } from 'lucide-react'
 import { cn } from '@/lib/ui'
 
-export type TabKey = 'dashboard' | 'perfil' | 'pdaa' | 'historico' | 'feedbacks' | 'entregas'
+export type TabKey = 'dashboard' | 'perfil' | 'pdaa' | 'historico' | 'feedbacks' | 'entregas' | 'pdi'
 
 const NAV: { key: TabKey; label: string; icon: ReactNode }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={17} /> },
   { key: 'perfil', label: 'Perfil', icon: <IdCard size={17} /> },
   { key: 'pdaa', label: 'PDAA', icon: <ShieldAlert size={17} /> },
+  { key: 'pdi', label: 'PDI', icon: <Target size={17} /> },
   { key: 'historico', label: 'Histórico', icon: <GitCommitVertical size={17} /> },
   { key: 'feedbacks', label: 'Feedbacks', icon: <MessageCircle size={17} /> },
   { key: 'entregas', label: 'Entregas', icon: <PackageCheck size={17} /> },
@@ -18,7 +19,7 @@ export function Sidebar({ active, onChange, isAdmin, cicloAtual }: { active: Tab
   return (
     <aside className="flex shrink-0 flex-col gap-1 border-line bg-sidebar text-sidebar-fg md:h-screen md:w-60 md:border-r md:sticky md:top-0">
       {/* Marca — topo esquerdo */}
-      <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-4">
+      <div className="flex h-[68px] items-center gap-2.5 border-b border-sidebar-border px-5">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white">
           <ShieldCheck size={18} />
         </div>

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   IdCard,
   Hexagon,
-  ListChecks,
   Lightbulb,
   TrendingUp,
   GraduationCap,
@@ -34,12 +33,6 @@ const recomIcon: Record<Tone, typeof TrendingUp> = {
   warn: GraduationCap,
   bad: Users,
   info: Users,
-}
-
-function barColor(p: number) {
-  if (p >= 70) return 'bg-good-bar'
-  if (p >= 50) return 'bg-brand'
-  return 'bg-warn'
 }
 
 // ---------- Dados do membro ----------
@@ -776,24 +769,7 @@ export function Perfil({
 
       <Desenvolvimento1a1 avaliacao={avaliacao} setAvaliacao={setAvaliacao} isAdmin={isAdmin} />
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Competencias dossie={dossie} isAdmin={isAdmin} />
-
-        <Card className="p-4 sm:p-5">
-          <SectionTitle icon={<ListChecks size={15} />}>PDI — plano de desenvolvimento</SectionTitle>
-          <div className="space-y-2.5">
-            {dossie.pdi.map((item) => (
-              <div key={item.id} className="flex items-center gap-3">
-                <div className="w-36 shrink-0 text-xs text-ink-secondary">{item.titulo}</div>
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg-secondary">
-                  <div className={cn('h-full rounded-full', barColor(item.progresso))} style={{ width: `${item.progresso}%` }} />
-                </div>
-                <div className="w-9 text-right text-[11px] font-medium text-ink-secondary">{item.progresso}%</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+      <Competencias dossie={dossie} isAdmin={isAdmin} />
 
       <Card className="p-4 sm:p-5">
         <SectionTitle icon={<Lightbulb size={15} />}>Recomendações automáticas</SectionTitle>
