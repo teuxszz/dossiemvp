@@ -15,7 +15,6 @@ import { useDossie } from './hooks/useDossie'
 import { useAuth } from './hooks/useAuth'
 import { useTheme } from './hooks/useTheme'
 import { useCicloGlobal, type UseCicloGlobal } from './hooks/useCicloGlobal'
-import { farolDe } from './lib/pdaa'
 import { computeMediaTime } from './lib/mockData'
 import type { Dossie, Feedback, RegistroConduta, EventoTimeline, KpiCiclo, SnapshotCiclo, ConfigCiclo, GrupoTrabalho, ParticipacaoGT, Colaborador, ItemPdi } from './lib/types'
 import type { DataSource } from './hooks/useDossie'
@@ -37,11 +36,6 @@ function getFeedbackParams(): { token: string; membroId: string; membroNome: str
   const membroNome = decodeURIComponent(params.get('nome') ?? '')
   if (token && membroId) return { token, membroId, membroNome }
   return null
-}
-
-function proximoCiclo(atual: { ano: number; ciclo: string }): { ano: number; ciclo: string } {
-  const num = parseInt(atual.ciclo.replace('C', ''))
-  return num < 4 ? { ano: atual.ano, ciclo: `C${num + 1}` } : { ano: atual.ano + 1, ciclo: 'C1' }
 }
 
 export function App() {
@@ -299,15 +293,11 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdi, dossie?.colaborador.id])
 
-  // Config de fechamento de ciclo
-  const [configCiclo, setConfigCiclo] = useState<ConfigCiclo | null>(() => {
+  // Config de fechamento de ciclo — legado, mantido só de leitura pro histórico
+  // exibido no Dashboard; a criação/edição agora acontece na aba Ciclos (geral).
+  const [configCiclo] = useState<ConfigCiclo | null>(() => {
     try { return JSON.parse(localStorage.getItem(LS_CICLO_CONFIG) ?? 'null') } catch { return null }
   })
-
-  function salvarConfigCiclo(cfg: ConfigCiclo) {
-    setConfigCiclo(cfg)
-    localStorage.setItem(LS_CICLO_CONFIG, JSON.stringify(cfg))
-  }
 
   // Snapshots de ciclos fechados
   const [snapshots, setSnapshots] = useState<SnapshotCiclo[]>([])
@@ -318,39 +308,6 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
       setSnapshots(all[dossie.colaborador.id] ?? [])
     } catch { setSnapshots([]) }
   }, [dossie?.colaborador.id])
-
-  function fecharCiclo(kpisFinais: { engajamento: number; pco: number; entregas: number; presenca: number }) {
-    if (!dossie) return
-    const pontos = registros.reduce((s, r) => s + r.pontos, 0)
-    const snapshot: SnapshotCiclo = {
-      ano: cicloAtual.ano,
-      ciclo: cicloAtual.ciclo,
-      fechadoEm: new Date().toISOString(),
-      pontuacaoPdaa: pontos,
-      farolNivel: farolDe(pontos).nivel,
-      kpis: kpisFinais,
-    }
-
-    const membroId = dossie.colaborador.id
-    try {
-      const all: Record<string, SnapshotCiclo[]> = JSON.parse(localStorage.getItem(LS_SNAPSHOTS) ?? '{}')
-      const updated = { ...all, [membroId]: [...(all[membroId] ?? []), snapshot] }
-      localStorage.setItem(LS_SNAPSHOTS, JSON.stringify(updated))
-      setSnapshots(updated[membroId])
-    } catch { /* ignore */ }
-
-    const cicloKey = cicloAtual
-    setKpisPorCiclo((prev) => {
-      const existe = prev.some((k) => k.ano === cicloKey.ano && k.ciclo === cicloKey.ciclo)
-      const base = existe
-        ? prev.map((k) => k.ano === cicloKey.ano && k.ciclo === cicloKey.ciclo ? { ...k, ...kpisFinais } : k)
-        : [...prev, { ano: cicloKey.ano, ciclo: cicloKey.ciclo, pdaa: pontos, ...kpisFinais }]
-      return base
-    })
-
-    setCicloAtual(proximoCiclo(cicloAtual))
-    setRegistros([])
-  }
 
   const pontosPdaa = registros.reduce((s, r) => s + r.pontos, 0)
 
@@ -411,9 +368,6 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   setRegistros={setRegistros}
                   cicloAtual={cicloAtual}
                   pontosPdaa={pontosPdaa}
-                  configCiclo={configCiclo}
-                  onSalvarConfig={salvarConfigCiclo}
-                  onFecharCiclo={fecharCiclo}
                   snapshots={snapshots}
                   isAdmin={isAdmin}
                   currentEmail={currentEmail}

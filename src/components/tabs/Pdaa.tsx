@@ -5,12 +5,9 @@ import {
   ShieldAlert,
   Gift,
   ListChecks,
-  Settings,
   Lock,
-  AlertCircle,
   Check,
   X,
-  CalendarClock,
   ChevronDown,
   ChevronUp,
   History,
@@ -23,7 +20,7 @@ import { AbonosPorCicloChart, PontuacaoPorCicloChart } from '../charts/Charts'
 import { CONDUTAS, CATEGORIA_LABEL, CATEGORIA_TONE, PONTOS_POR_CATEGORIA, comCicloAtual, filtrarCiclosFuturos, farolDe, ABONOS_CATALOGO } from '@/lib/pdaa'
 import { cn, toneBadge, type Tone } from '@/lib/ui'
 import { supabase } from '@/lib/supabase'
-import type { CategoriaConduta, ConfigCiclo, Dossie, RegistroConduta, SnapshotCiclo, UsoAbono } from '@/lib/types'
+import type { CategoriaConduta, Dossie, RegistroConduta, SnapshotCiclo, UsoAbono } from '@/lib/types'
 
 const CATEGORIAS: CategoriaConduta[] = ['leve', 'moderada', 'alerta', 'grave']
 
@@ -33,27 +30,13 @@ interface Props {
   setRegistros: (next: RegistroConduta[]) => void
   cicloAtual: { ano: number; ciclo: string }
   pontosPdaa: number
-  configCiclo: ConfigCiclo | null
-  onSalvarConfig: (cfg: ConfigCiclo) => void
-  onFecharCiclo: (kpis: { engajamento: number; pco: number; entregas: number; presenca: number }) => void
   snapshots: SnapshotCiclo[]
   isAdmin: boolean
   currentEmail: string | null
   cicloFechado: boolean
 }
 
-function formatDate(iso: string) {
-  const [y, m, d] = iso.split('-')
-  return `${d}/${m}/${y}`
-}
-
-function cicloFechadoHoje(config: ConfigCiclo | null, cicloAtual: { ano: number; ciclo: string }) {
-  if (!config) return false
-  const ref = `${cicloAtual.ano}-${cicloAtual.ciclo}`
-  return config.cicloRef === ref && new Date(config.dataFechamento) <= new Date()
-}
-
-export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, configCiclo, onSalvarConfig, onFecharCiclo, snapshots, isAdmin, currentEmail, cicloFechado }: Props) {
+export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, snapshots, isAdmin, currentEmail, cicloFechado }: Props) {
   const [abonoSalvando, setAbonoSalvando] = useState(false)
   const [abonoErro, setAbonoErro] = useState<string | null>(null)
   const [showPicker, setShowPicker] = useState(false)
@@ -62,10 +45,6 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
   const [condutaSel, setCondutaSel] = useState<string | null>(null)
   const [condutaData, setCondutaData] = useState('')
   const [condutaObs, setCondutaObs] = useState('')
-  const [showConfig, setShowConfig] = useState(false)
-  const [showFechar, setShowFechar] = useState(false)
-  const [dataInput, setDataInput] = useState(configCiclo?.dataFechamento ?? '')
-  const [kpisFechar, setKpisFechar] = useState({ engajamento: 0, pco: 0, entregas: 0, presenca: 0 })
   const [showAbonoCatalogo, setShowAbonoCatalogo] = useState(false)
   const [showAddAbono, setShowAddAbono] = useState(false)
   const [abonoTipoSel, setAbonoTipoSel] = useState(ABONOS_CATALOGO[0].id)
@@ -98,11 +77,6 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
   const abonosDoAno = dossie.pdaa.abonosPorCiclo.filter((a) => a.ano === anoAbonos)
   const abonosUsadosTotal = dossie.pdaa.abonosPorCiclo.reduce((s, a) => s + a.usados, 0)
 
-  const prazoCiclo = configCiclo?.cicloRef === `${cicloAtual.ano}-${cicloAtual.ciclo}`
-    ? configCiclo.dataFechamento : null
-  const prazoVencido = cicloFechadoHoje(configCiclo, cicloAtual)
-  const cicloRef = `${cicloAtual.ano}-${cicloAtual.ciclo}`
-
   function adicionarConduta() {
     const c = CONDUTAS.find((x) => x.id === condutaSel)
     if (!c) return
@@ -125,24 +99,13 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
     setRegistros(registros.filter((r) => r.id !== id))
   }
 
-  function salvarConfig() {
-    if (!dataInput) return
-    onSalvarConfig({ cicloRef, dataFechamento: dataInput })
-    setShowConfig(false)
-  }
-
-  function confirmarFechamento() {
-    onFecharCiclo(kpisFechar)
-    setShowFechar(false)
-  }
-
   // Encontra snapshot do ciclo atual se já fechado
   const snapshotAtual = snapshots.find((s) => s.ano === cicloAtual.ano && s.ciclo === cicloAtual.ciclo)
 
   return (
     <div className="space-y-4">
-      {/* Banner de prazo / ciclo fechado */}
-      {snapshotAtual ? (
+      {/* Banner de ciclo fechado (histórico) */}
+      {snapshotAtual && (
         <div className="flex items-center gap-2 rounded-lg border border-good/30 bg-good-soft px-4 py-2.5 text-xs text-good">
           <Lock size={14} />
           <span>
@@ -151,21 +114,7 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
             <strong>{snapshotAtual.pontuacaoPdaa} pts</strong> ({snapshotAtual.farolNivel})
           </span>
         </div>
-      ) : prazoCiclo ? (
-        <div className={cn(
-          'flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs',
-          prazoVencido
-            ? 'border-bad/30 bg-bad-soft text-bad'
-            : 'border-warn/30 bg-warn/10 text-warn'
-        )}>
-          <CalendarClock size={14} />
-          <span>
-            {prazoVencido ? 'Prazo de fechamento vencido!' : 'Ciclo aberto até'}{' '}
-            <strong>{formatDate(prazoCiclo)}</strong>
-            {prazoVencido && ' — feche o ciclo para registrar os dados finais.'}
-          </span>
-        </div>
-      ) : null}
+      )}
 
       {/* Resumo: farol + abonos + condutas */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
@@ -450,104 +399,12 @@ export function Pdaa({ dossie, registros, setRegistros, cicloAtual, pontosPdaa, 
         </div>
       </Card>
 
-      {/* Registro editável de condutas — só admin registra/remove/fecha ciclo */}
+      {/* Registro editável de condutas — só admin registra/remove. Prazo e
+          fechamento de ciclo agora são geridos globalmente na aba Ciclos. */}
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between">
           <SectionTitle icon={<ShieldAlert size={15} />}>Registro de condutas — {cicloAtual.ano} {cicloAtual.ciclo}</SectionTitle>
-          {isAdmin && !cicloFechado && (
-          <div className="flex items-center gap-2">
-            {/* Config de prazo */}
-            <button
-              onClick={() => { setShowConfig((v) => !v); setShowFechar(false) }}
-              className={cn(
-                'flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors',
-                showConfig ? 'bg-brand/10 text-brand' : 'bg-bg-secondary text-ink-secondary hover:text-brand'
-              )}
-              title="Configurar prazo de fechamento"
-            >
-              <Settings size={12} /> Prazo
-            </button>
-            {/* Fechar ciclo */}
-            {!snapshotAtual && (
-              <button
-                onClick={() => { setShowFechar((v) => !v); setShowConfig(false) }}
-                className={cn(
-                  'flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors',
-                  showFechar ? 'bg-warn/10 text-warn' : 'bg-bg-secondary text-ink-secondary hover:text-warn'
-                )}
-              >
-                <Lock size={12} /> Fechar ciclo
-              </button>
-            )}
-          </div>
-          )}
         </div>
-
-        {/* Painel config de prazo */}
-        {isAdmin && showConfig && (
-          <div className="mt-3 rounded-lg border border-line bg-bg-secondary p-3">
-            <p className="mb-2 text-[11px] font-medium text-ink-secondary">
-              Estipule a data de fechamento do ciclo {cicloRef} (G&G — Gerente de Pesquisas e Pessoas)
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={dataInput}
-                onChange={(e) => setDataInput(e.target.value)}
-                className="flex-1 rounded border border-line bg-bg-tertiary px-2 py-1.5 text-xs text-ink-primary focus:border-brand focus:outline-none"
-              />
-              <button onClick={salvarConfig} className="flex items-center gap-1 rounded-md bg-brand px-3 py-1.5 text-xs text-white hover:bg-brand/90">
-                <Check size={12} /> Salvar
-              </button>
-              <button onClick={() => setShowConfig(false)} className="p-1.5 text-ink-tertiary hover:text-ink-primary">
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Painel fechar ciclo */}
-        {isAdmin && showFechar && (
-          <div className="mt-3 rounded-lg border border-warn/30 bg-warn/5 p-4">
-            <div className="mb-3 flex items-start gap-2">
-              <AlertCircle size={15} className="mt-0.5 shrink-0 text-warn" />
-              <div>
-                <p className="text-[13px] font-medium text-ink-primary">Fechar ciclo {cicloRef}</p>
-                <p className="mt-0.5 text-xs text-ink-secondary">
-                  Esta ação congela as condutas registradas e avança para o próximo ciclo. Informe os valores finais dos KPIs antes de confirmar.
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {(['engajamento', 'pco', 'entregas', 'presenca'] as const).map((k) => (
-                <div key={k}>
-                  <label className="mb-0.5 block text-[11px] capitalize text-ink-tertiary">
-                    {k === 'presenca' ? 'Presença' : k.charAt(0).toUpperCase() + k.slice(1)} %
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={kpisFechar[k]}
-                    onChange={(e) => setKpisFechar((prev) => ({ ...prev, [k]: Number(e.target.value) }))}
-                    className="w-full rounded border border-line bg-bg-tertiary px-2 py-1.5 text-xs text-ink-primary focus:border-brand focus:outline-none"
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={confirmarFechamento}
-                className="flex items-center gap-1.5 rounded-lg bg-warn px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
-              >
-                <Lock size={12} /> Confirmar fechamento
-              </button>
-              <button onClick={() => setShowFechar(false)} className="rounded-lg border border-line px-3 py-1.5 text-xs text-ink-secondary hover:text-ink-primary">
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
 
         {isAdmin && !cicloFechado && (
         <p className="mb-3 mt-3 text-xs text-ink-secondary">
