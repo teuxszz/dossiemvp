@@ -14,7 +14,7 @@ const NAV: { key: TabKey; label: string; icon: ReactNode }[] = [
   { key: 'entregas', label: 'Entregas', icon: <PackageCheck size={17} /> },
 ]
 
-export function Sidebar({ active, onChange, isAdmin, cicloAtual }: { active: TabKey; onChange: (t: TabKey) => void; isAdmin: boolean; cicloAtual: { ano: number; ciclo: string } }) {
+export function Sidebar({ active, onChange, isAdmin, cicloAtual, onGoToCiclos }: { active: TabKey; onChange: (t: TabKey) => void; isAdmin: boolean; cicloAtual: { ano: number; ciclo: string }; onGoToCiclos?: () => void }) {
   const items = NAV
   return (
     <aside className="flex shrink-0 flex-col gap-1 border-line bg-sidebar text-sidebar-fg md:h-screen md:w-60 md:border-r md:sticky md:top-0">
@@ -31,9 +31,19 @@ export function Sidebar({ active, onChange, isAdmin, cicloAtual }: { active: Tab
 
       {/* Ciclo ativo — bem visível, canto superior esquerdo */}
       <div className="px-5 pt-3">
-        <span className="flex w-fit items-center gap-1.5 rounded-full border border-brand/40 bg-brand/15 px-3 py-1 text-xs font-semibold text-brand">
-          <CalendarClock size={13} /> {cicloAtual.ano} · {cicloAtual.ciclo}
-        </span>
+        {onGoToCiclos ? (
+          <button
+            onClick={onGoToCiclos}
+            title="Ir para a aba Ciclos no painel geral"
+            className="flex w-fit items-center gap-1.5 rounded-full border border-brand/40 bg-brand/15 px-3 py-1 text-xs font-semibold text-brand transition-colors hover:border-brand hover:bg-brand/25 cursor-pointer"
+          >
+            <CalendarClock size={13} /> {cicloAtual.ano} · {cicloAtual.ciclo}
+          </button>
+        ) : (
+          <span className="flex w-fit items-center gap-1.5 rounded-full border border-brand/40 bg-brand/15 px-3 py-1 text-xs font-semibold text-brand">
+            <CalendarClock size={13} /> {cicloAtual.ano} · {cicloAtual.ciclo}
+          </span>
+        )}
       </div>
 
       {/* Navegação vertical (vira horizontal com scroll no mobile) */}

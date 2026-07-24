@@ -74,6 +74,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
   const cicloGlobal = useCicloGlobal()
   const [resolvingOwn, setResolvingOwn] = useState(false)
   const [ownNotFound, setOwnNotFound] = useState(false)
+  const [homeInitialTab, setHomeInitialTab] = useState<'membros' | 'dashboard' | 'ciclos' | 'administradores' | 'seguranca'>('membros')
 
   // Membro comum (não-admin): não escolhe quem ver — cai direto no próprio dossiê.
   useEffect(() => {
@@ -144,6 +145,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
         onToggleTheme={toggle}
         onSignOut={onSignOut}
         cicloGlobal={cicloGlobal}
+        initialTab={homeInitialTab}
       />
     )
   }
@@ -157,7 +159,8 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
       source={source}
       theme={theme}
       onToggleTheme={toggle}
-      onBack={() => setSelectedId(null)}
+      onBack={() => { setHomeInitialTab('membros'); setSelectedId(null) }}
+      onGoToCiclos={() => { setHomeInitialTab('ciclos'); setSelectedId(null) }}
       isAdmin
       currentEmail={email}
       onSignOut={onSignOut}
@@ -178,6 +181,7 @@ interface DossierViewProps {
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   onBack?: () => void
+  onGoToCiclos?: () => void
   isAdmin: boolean
   currentEmail: string | null
   onSignOut: () => void
@@ -186,7 +190,7 @@ interface DossierViewProps {
   cicloGlobal: UseCicloGlobal
 }
 
-function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack, isAdmin, currentEmail, onSignOut, onUpdateMembro, onUpdateDossieData, cicloGlobal }: DossierViewProps) {
+function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack, onGoToCiclos, isAdmin, currentEmail, onSignOut, onUpdateMembro, onUpdateDossieData, cicloGlobal }: DossierViewProps) {
   const mediaTimeKpis = useMemo(() => computeMediaTime(allDossies), [allDossies])
   const [tab, setTab] = useState<TabKey>('dashboard')
 
@@ -313,7 +317,7 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
 
   return (
     <div className="flex min-h-screen flex-col bg-bg-tertiary md:flex-row">
-      <Sidebar active={tab} onChange={setTab} isAdmin={isAdmin} cicloAtual={cicloAtual} />
+      <Sidebar active={tab} onChange={setTab} isAdmin={isAdmin} cicloAtual={cicloAtual} onGoToCiclos={onGoToCiclos} />
 
       <div className="min-w-0 flex-1">
         {error && (

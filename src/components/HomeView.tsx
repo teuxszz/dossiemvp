@@ -128,12 +128,13 @@ interface Props {
   onToggleTheme: () => void
   onSignOut?: () => void
   cicloGlobal: UseCicloGlobal
+  initialTab?: 'membros' | 'dashboard' | 'ciclos' | 'administradores' | 'seguranca'
 }
 
-export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, onUpdateMembro, theme, onToggleTheme, onSignOut, cicloGlobal }: Props) {
+export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, onUpdateMembro, theme, onToggleTheme, onSignOut, cicloGlobal, initialTab }: Props) {
   const [editCargo, setEditCargo] = useState<Membro | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'membros' | 'dashboard' | 'ciclos' | 'administradores' | 'seguranca'>('membros')
+  const [activeTab, setActiveTab] = useState<'membros' | 'dashboard' | 'ciclos' | 'administradores' | 'seguranca'>(initialTab ?? 'membros')
 
   // Ano fechado (avançado ou visto pelo histórico) — só dá pra excluir/arquivar
   // membro, nada de criar ou trocar cargo, pra não bagunçar o quadro congelado.
