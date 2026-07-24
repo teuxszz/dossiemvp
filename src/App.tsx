@@ -75,7 +75,7 @@ export function App() {
 
 // Camada de navegação — decide entre HomeView e DossierView
 function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin: boolean; onSignOut: () => void }) {
-  const { dossie, membros, allDossies, selectedId, setSelectedId, addMembro, removeMembro, updateMembro, resolveIdByEmail, loading, error, source } = useDossie()
+  const { dossie, membros, allDossies, selectedId, setSelectedId, addMembro, removeMembro, updateMembro, updateDossieData, resolveIdByEmail, loading, error, source } = useDossie()
   const { theme, toggle } = useTheme()
   const cicloGlobal = useCicloGlobal()
   const [resolvingOwn, setResolvingOwn] = useState(false)
@@ -131,6 +131,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
         currentEmail={email}
         onSignOut={onSignOut}
         onUpdateMembro={updateMembro}
+        onUpdateDossieData={updateDossieData}
         cicloGlobal={cicloGlobal}
       />
     )
@@ -167,6 +168,7 @@ function MainApp({ email, isAdmin, onSignOut }: { email: string | null; isAdmin:
       currentEmail={email}
       onSignOut={onSignOut}
       onUpdateMembro={updateMembro}
+      onUpdateDossieData={updateDossieData}
       cicloGlobal={cicloGlobal}
     />
   )
@@ -186,10 +188,11 @@ interface DossierViewProps {
   currentEmail: string | null
   onSignOut: () => void
   onUpdateMembro: (id: string, patch: Partial<Colaborador>) => void
+  onUpdateDossieData: (id: string, patch: Partial<Omit<Dossie, 'colaborador'>>) => void
   cicloGlobal: UseCicloGlobal
 }
 
-function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack, isAdmin, currentEmail, onSignOut, onUpdateMembro, cicloGlobal }: DossierViewProps) {
+function DossierView({ dossie, allDossies, loading, error, source, theme, onToggleTheme, onBack, isAdmin, currentEmail, onSignOut, onUpdateMembro, onUpdateDossieData, cicloGlobal }: DossierViewProps) {
   const mediaTimeKpis = useMemo(() => computeMediaTime(allDossies), [allDossies])
   const [tab, setTab] = useState<TabKey>('dashboard')
 
@@ -198,6 +201,15 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
   useEffect(() => {
     if (dossie) setRegistros(dossie.pdaa.condutasRegistradas ?? [])
   }, [dossie?.colaborador.id])
+
+  // Sincroniza o que é editado no dossiê individual (KPIs, condutas PDAA, PDI)
+  // de volta pro dado compartilhado — sem isso o painel geral nunca via essas
+  // mudanças, porque cada aba só guardava tudo em estado local do React.
+  useEffect(() => {
+    if (!dossie) return
+    onUpdateDossieData(dossie.colaborador.id, { pdaa: { ...dossie.pdaa, condutasRegistradas: registros } })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registros, dossie?.colaborador.id])
 
   // Ciclo atual — segue o ciclo global (aba Ciclos no painel), pra todo mundo
   // enxergar/editar o mesmo período por padrão.
@@ -213,6 +225,11 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
   useEffect(() => {
     if (dossie) setKpisPorCiclo(dossie.kpisPorCiclo)
   }, [dossie?.colaborador.id])
+  useEffect(() => {
+    if (!dossie) return
+    onUpdateDossieData(dossie.colaborador.id, { kpisPorCiclo })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kpisPorCiclo, dossie?.colaborador.id])
 
   // Timeline
   const [timeline, setTimeline] = useState<EventoTimeline[]>([])
@@ -278,6 +295,8 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
       const all: Record<string, ItemPdi[]> = JSON.parse(localStorage.getItem(LS_PDI) ?? '{}')
       localStorage.setItem(LS_PDI, JSON.stringify({ ...all, [dossie.colaborador.id]: pdi }))
     } catch { /* ignore */ }
+    onUpdateDossieData(dossie.colaborador.id, { pdi })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdi, dossie?.colaborador.id])
 
   // Config de fechamento de ciclo

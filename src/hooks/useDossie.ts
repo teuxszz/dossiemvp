@@ -15,6 +15,8 @@ interface UseDossieResult {
   removeMembro: (id: string) => void
   /** Atualiza cargo/diretoria (ou outros campos do colaborador) de um membro existente. */
   updateMembro: (id: string, patch: Partial<Colaborador>) => void
+  /** Atualiza dados internos do dossiê (KPIs por ciclo, condutas PDAA, PDI...) — é o que faz o painel geral enxergar o que foi editado no dossiê individual. */
+  updateDossieData: (id: string, patch: Partial<Omit<Dossie, 'colaborador'>>) => void
   /** Resolve o id do dossiê vinculado a um e-mail (mock local ou Supabase). Usado no login do membro comum. */
   resolveIdByEmail: (email: string) => Promise<string | null>
   loading: boolean
@@ -82,6 +84,27 @@ function saveRemovidos(ids: Set<string>) {
   localStorage.setItem(LS_REMOVIDOS, JSON.stringify([...ids]))
 }
 
+const LS_DOSSIE_EDITS = 'dossie_dados_edits'
+
+// Patches nos DADOS do dossiê (KPIs por ciclo, condutas PDAA, PDI, timeline...) —
+// sem isso, o que é editado dentro do dossiê individual (ex.: registrar uma
+// conduta PDAA, lançar um KPI) nunca chegava ao painel geral, porque cada aba
+// só guardava esses valores em estado local do React (perdido ao trocar de
+// membro ou dar reload). Mesmo esquema de overlay usado para colaborador.
+type DossieDataPatch = Partial<Omit<Dossie, 'colaborador'>>
+
+function loadDossieEdits(): Record<string, DossieDataPatch> {
+  try { return JSON.parse(localStorage.getItem(LS_DOSSIE_EDITS) ?? '{}') } catch { return {} }
+}
+function saveDossieEdits(edits: Record<string, DossieDataPatch>) {
+  localStorage.setItem(LS_DOSSIE_EDITS, JSON.stringify(edits))
+}
+function aplicarDossieEdits(d: Dossie, edits: Record<string, DossieDataPatch>): Dossie {
+  const patch = edits[d.colaborador.id]
+  if (!patch) return d
+  return { ...d, ...patch }
+}
+
 const LS_EDITS = 'dossie_membros_edits'
 
 // Alterações (cargo/diretoria etc.) feitas em membros "de fábrica"
@@ -107,10 +130,12 @@ export function useDossie(): UseDossieResult {
   const [extras, setExtras] = useState<Dossie[]>(loadExtras)
   const [removidos, setRemovidos] = useState<Set<string>>(loadRemovidos)
   const [edits, setEdits] = useState<Record<string, Partial<Colaborador>>>(loadEdits)
+  const [dossieEdits, setDossieEdits] = useState<Record<string, DossieDataPatch>>(loadDossieEdits)
 
   const allMock: Dossie[] = [...MOCK_MEMBROS, ...extras]
     .filter((d) => !removidos.has(d.colaborador.id))
     .map((d) => aplicarEdits(d, edits))
+    .map((d) => aplicarDossieEdits(d, dossieEdits))
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [dossie, setDossie] = useState<Dossie | null>(null)
@@ -179,7 +204,7 @@ export function useDossie(): UseDossieResult {
       })
 
     return () => { active = false }
-  }, [selectedId, extras, removidos, edits])
+  }, [selectedId, extras, removidos, edits, dossieEdits])
 
   function addMembro(colab: Colaborador) {
     const novo = criarDossieBase(colab)
@@ -291,6 +316,30 @@ export function useDossie(): UseDossieResult {
     }
   }
 
+  /** Persiste patches nos DADOS do dossiê (KPIs por ciclo, condutas PDAA, PDI...)
+   *  pra que o que é editado no dossiê individual reflita no painel geral. */
+  function updateDossieData(id: string, patch: DossieDataPatch) {
+    const updatedEdits = { ...dossieEdits, [id]: { ...dossieEdits[id], ...patch } }
+    setDossieEdits(updatedEdits)
+    saveDossieEdits(updatedEdits)
+
+    // Membro só no Supabase: melhor esforço, mescla dentro da coluna `dados` jsonb.
+    const ehLocal = [...MOCK_MEMBROS, ...extras].some((d) => d.colaborador.id === id)
+    if (!ehLocal && supabase) {
+      const base = allMock.find((d) => d.colaborador.id === id)
+      if (base) {
+        const { colaborador: _c, ...dadosAtuais } = base
+        supabase
+          .from('colaboradores')
+          .update({ dados: { ...dadosAtuais, ...patch } })
+          .eq('id', id)
+          .then(({ error: err }) => {
+            if (err) console.warn('Não foi possível salvar os dados do dossiê no Supabase:', err.message)
+          })
+      }
+    }
+  }
+
   async function resolveIdByEmail(email: string): Promise<string | null> {
     const local = allMock.find((d) => d.colaborador.email === email)
     if (local) return local.colaborador.id
@@ -309,6 +358,7 @@ export function useDossie(): UseDossieResult {
     addMembro,
     removeMembro,
     updateMembro,
+    updateDossieData,
     resolveIdByEmail,
     loading,
     error,

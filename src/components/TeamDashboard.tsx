@@ -250,18 +250,29 @@ export function TeamDashboard({ allDossies, onSelectMembro, cicloGlobal }: Props
             </button>
           </div>
         </div>
-        <div className="mt-3 h-56">
+        <div className="mt-3 h-64 overflow-x-auto overflow-y-hidden">
+          <div className="h-full w-full" style={{ minWidth: `${Math.max(chartData.length * 42, 100)}px` }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
-              barSize={28}
+              barSize={24}
+              margin={{ top: 4, right: 8, left: 0, bottom: 24 }}
               onClick={(d) => {
                 if (visaoPdaa !== 'membro') return
                 const id = (d as { activePayload?: Array<{ payload?: { id?: string } }> })?.activePayload?.[0]?.payload?.id
                 if (id) onSelectMembro(id)
               }}
             >
-              <XAxis dataKey="nome" tick={{ fontSize: 11, fill: 'var(--color-ink-secondary)' }} axisLine={false} tickLine={false} />
+              <XAxis
+                dataKey="nome"
+                tick={{ fontSize: 10, fill: 'var(--color-ink-secondary)' }}
+                axisLine={false}
+                tickLine={false}
+                interval={0}
+                angle={-40}
+                textAnchor="end"
+                height={50}
+              />
               <YAxis tick={{ fontSize: 11, fill: 'var(--color-ink-tertiary)' }} axisLine={false} tickLine={false} />
               <Tooltip
                 content={({ active, payload }) => {
@@ -285,6 +296,7 @@ export function TeamDashboard({ allDossies, onSelectMembro, cicloGlobal }: Props
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
         <p className="mt-2 text-[11px] text-ink-tertiary">
           {visaoPdaa === 'membro'
