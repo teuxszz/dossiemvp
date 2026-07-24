@@ -217,7 +217,7 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
     <div className="flex min-h-screen bg-bg-tertiary">
       {/* Sidebar lateral */}
       <aside className="flex shrink-0 flex-col gap-1 border-line bg-sidebar text-sidebar-fg md:h-screen md:w-60 md:border-r md:sticky md:top-0">
-        <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-4">
+        <div className="flex h-[68px] items-center gap-2.5 border-b border-sidebar-border px-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white">
             <Users size={16} />
           </div>
@@ -278,8 +278,8 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
 
       <div className="min-w-0 flex-1">
         {/* Topbar do conteúdo */}
-        <header className="sticky top-0 z-10 border-b border-line bg-bg-primary px-6 py-4">
-          <div className="flex items-center justify-between gap-3">
+        <header className="sticky top-0 z-10 flex h-[68px] items-center border-b border-line bg-bg-primary px-6">
+          <div className="flex w-full items-center justify-between gap-3">
             <h1 className="font-display text-[15px] font-semibold text-ink-primary">{tituloAtivo}</h1>
             {activeTab === 'membros' && !quadroBloqueado && (
               <button
