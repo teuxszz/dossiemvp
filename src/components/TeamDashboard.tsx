@@ -39,6 +39,23 @@ function avg(nums: number[]) {
   return Math.round(nums.reduce((s, n) => s + n, 0) / nums.length)
 }
 
+// Nome curto pra rótulo de gráfico — só primeiro nome, exceto quando isso gera
+// ambiguidade (ex.: várias "Maria"), aí junta a inicial do segundo nome.
+function nomesCurtos(nomesCompletos: string[]): Map<string, string> {
+  const partes = nomesCompletos.map((n) => n.trim().split(/\s+/))
+  const contagemPrimeiroNome = new Map<string, number>()
+  for (const p of partes) contagemPrimeiroNome.set(p[0], (contagemPrimeiroNome.get(p[0]) ?? 0) + 1)
+
+  const resultado = new Map<string, string>()
+  partes.forEach((p, i) => {
+    const primeiro = p[0]
+    const ambiguo = (contagemPrimeiroNome.get(primeiro) ?? 0) > 1
+    const curto = ambiguo && p[1] ? `${primeiro} ${p[1][0]}.` : primeiro
+    resultado.set(nomesCompletos[i], curto)
+  })
+  return resultado
+}
+
 interface Props {
   allDossies: Dossie[]
   onSelectMembro: (id: string) => void
@@ -78,6 +95,8 @@ export function TeamDashboard({ allDossies, onSelectMembro, cicloGlobal }: Props
   }
   const emAtencao = stats.filter((s) => s.farolNivel !== 'azul').sort((a, b) => b.pontosPdaa - a.pontosPdaa)
 
+  const mapNomeCurto = useMemo(() => nomesCurtos(stats.map((s) => s.nome)), [stats])
+
   const comKpi = stats.filter((s) => s.kpiAtual !== null)
   const mediaKpi = {
     engajamento: avg(comKpi.map((s) => s.kpiAtual!.engajamento)),
@@ -100,7 +119,7 @@ export function TeamDashboard({ allDossies, onSelectMembro, cicloGlobal }: Props
   const chartDataPorMembro = [...stats]
     .sort((a, b) => b.pontosPdaa - a.pontosPdaa)
     .map((s) => ({
-      nome: s.nome.split(' ')[0],
+      nome: mapNomeCurto.get(s.nome) ?? s.nome,
       nomeCompleto: s.nome,
       pontos: s.pontosPdaa,
       nivel: s.farolNivel,
@@ -132,7 +151,7 @@ export function TeamDashboard({ allDossies, onSelectMembro, cicloGlobal }: Props
   const chartData = visaoPdaa === 'membro' ? chartDataPorMembro : chartDataPorDiretoria
 
   const kpiChartData = comKpi.map((s) => ({
-    nome: s.nome.split(' ')[0],
+    nome: mapNomeCurto.get(s.nome) ?? s.nome,
     Engajamento: s.kpiAtual!.engajamento,
     PCO: s.kpiAtual!.pco,
     Entregas: s.kpiAtual!.entregas,
