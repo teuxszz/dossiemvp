@@ -153,12 +153,11 @@ function ObjetivoCard({ item, isAdmin, onChange, onRemove, registradoPorPadrao }
               {item.metas.map((m) => (
                 <div key={m.id} className="flex items-center gap-2 py-1.5 text-xs">
                   <button
-                    onClick={() => isAdmin && toggleMeta(m.id)}
-                    disabled={!isAdmin}
+                    onClick={() => toggleMeta(m.id)}
+                    title={m.concluida ? 'Marcar como pendente' : 'Marcar como concluída'}
                     className={cn(
-                      'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
-                      m.concluida ? 'border-good bg-good text-white' : 'border-line bg-bg-tertiary',
-                      isAdmin && 'cursor-pointer',
+                      'flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded border',
+                      m.concluida ? 'border-good bg-good text-white' : 'border-line bg-bg-tertiary hover:border-brand',
                     )}
                   >
                     {m.concluida && <Check size={11} />}
@@ -258,7 +257,7 @@ export function Pdi({ pdi, setPdi, isAdmin, currentEmail }: Props) {
 
         {!isAdmin && (
           <p className="mb-3 flex items-center gap-1.5 text-[11px] text-ink-tertiary">
-            <ListChecks size={12} /> Só a coordenadoria de desempenho registra e atualiza o PDI — aqui você acompanha o próprio progresso.
+            <ListChecks size={12} /> Os objetivos são definidos pela coordenadoria de desempenho — você pode marcar as metas menores como concluídas conforme for avançando.
           </p>
         )}
 
