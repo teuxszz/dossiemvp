@@ -278,7 +278,9 @@ on conflict (id) do update set
 create or replace function public.atualizar_perfil_proprio(
   p_celular       text,
   p_email_contato text,
-  p_periodo_curso text
+  p_periodo_curso text,
+  p_data_entrada  text default null,
+  p_nascimento    text default null
 )
 returns void
 language plpgsql
@@ -296,10 +298,16 @@ begin
   update public.colaboradores
   set dados = jsonb_set(
         jsonb_set(
-          jsonb_set(dados, '{perfil,celular}', to_jsonb(coalesce(p_celular, '')), true),
-          '{perfil,email}', to_jsonb(coalesce(p_email_contato, '')), true
+          jsonb_set(
+            jsonb_set(
+              jsonb_set(dados, '{perfil,celular}', to_jsonb(coalesce(p_celular, '')), true),
+              '{perfil,email}', to_jsonb(coalesce(p_email_contato, '')), true
+            ),
+            '{perfil,periodoCurso}', to_jsonb(coalesce(p_periodo_curso, '')), true
+          ),
+          '{perfil,dataEntrada}', to_jsonb(coalesce(p_data_entrada, dados #>> '{perfil,dataEntrada}', '')), true
         ),
-        '{perfil,periodoCurso}', to_jsonb(coalesce(p_periodo_curso, '')), true
+        '{perfil,nascimento}', to_jsonb(coalesce(p_nascimento, dados #>> '{perfil,nascimento}', '')), true
       )
   where email = v_email;
 
@@ -310,7 +318,7 @@ begin
 end;
 $$;
 
-grant execute on function public.atualizar_perfil_proprio(text, text, text) to authenticated;
+grant execute on function public.atualizar_perfil_proprio(text, text, text, text, text) to authenticated;
 
 -- 5.2 Registrar abono PDAA (ação do catálogo, no ciclo atual).
 create or replace function public.registrar_abono_proprio(

@@ -45,7 +45,7 @@ function barColor(p: number) {
 // ---------- Dados do membro ----------
 
 // Campos que o próprio membro (não-admin) pode editar — o resto é só leitura pra ele.
-const CAMPOS_AUTOEDITAVEIS = new Set<keyof PerfilType>(['celular', 'email', 'periodoCurso'])
+const CAMPOS_AUTOEDITAVEIS = new Set<keyof PerfilType>(['celular', 'email', 'periodoCurso', 'dataEntrada', 'nascimento'])
 
 function DadosMembro({
   dossie,
@@ -76,6 +76,8 @@ function DadosMembro({
         p_celular: draft.celular,
         p_email_contato: draft.email,
         p_periodo_curso: draft.periodoCurso,
+        p_data_entrada: draft.dataEntrada,
+        p_nascimento: draft.nascimento,
       })
       setSalvando(false)
       if (error) { setErro(error.message); return }
