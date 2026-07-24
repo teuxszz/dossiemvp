@@ -35,3 +35,8 @@ logs
 
 # vercel
 .vercel
+
+.vercel
+
+# artefato gerado (dados já vivem em src/lib/mockData.ts)
+migracao-membros.sql
