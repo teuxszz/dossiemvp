@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut, UserCog, Pencil, CalendarClock, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/ui'
 import { TeamDashboard } from './TeamDashboard'
@@ -204,76 +204,81 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
     setShowNovo(false)
   }
 
+  const NAV_GERAL: { key: typeof activeTab; label: string; icon: ReactNode }[] = [
+    { key: 'membros', label: 'Membros', icon: <Users size={17} /> },
+    { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={17} /> },
+    { key: 'ciclos', label: 'Ciclos', icon: <CalendarClock size={17} /> },
+    { key: 'administradores', label: 'Administradores', icon: <UserCog size={17} /> },
+    { key: 'seguranca', label: 'Segurança', icon: <ShieldCheck size={17} /> },
+  ]
+
   return (
-    <div className="min-h-screen bg-bg-tertiary">
-      {/* Topbar */}
-      <header className="sticky top-0 z-10 border-b border-line bg-bg-primary px-6 py-4">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
-              <Users size={16} className="text-brand" />
-            </div>
-            <div>
-              <h1 className="text-[15px] font-semibold text-ink-primary">Dossiê CONSEJ</h1>
-              <p className="text-[11px] text-ink-tertiary">{membros.length} membro{membros.length !== 1 ? 's' : ''} cadastrado{membros.length !== 1 ? 's' : ''}</p>
-            </div>
-            <span
-              className="flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand"
-              title="Ciclo ativo — mude na aba Ciclos"
-            >
-              <CalendarClock size={13} /> {cicloGlobal.cicloGlobal.ano} · {cicloGlobal.cicloGlobal.ciclo}
-            </span>
+    <div className="flex min-h-screen bg-bg-tertiary">
+      {/* Sidebar lateral */}
+      <aside className="flex shrink-0 flex-col gap-1 border-line bg-sidebar text-sidebar-fg md:h-screen md:w-60 md:border-r md:sticky md:top-0">
+        <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-white">
+            <Users size={16} />
           </div>
-          <div className="flex items-center gap-2">
-            {/* Tabs */}
-            <div className="flex rounded-lg border border-line bg-bg-secondary p-0.5">
-              <button
-                onClick={() => setActiveTab('membros')}
-                className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors', activeTab === 'membros' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
-              >
-                <Users size={12} /> Membros
-              </button>
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors', activeTab === 'dashboard' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
-              >
-                <LayoutDashboard size={12} /> Dashboard
-              </button>
-              <button
-                onClick={() => setActiveTab('ciclos')}
-                className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors', activeTab === 'ciclos' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
-              >
-                <CalendarClock size={12} /> Ciclos
-              </button>
-              <button
-                onClick={() => setActiveTab('administradores')}
-                className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors', activeTab === 'administradores' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
-              >
-                <UserCog size={12} /> Administradores
-              </button>
-              <button
-                onClick={() => setActiveTab('seguranca')}
-                className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors', activeTab === 'seguranca' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
-              >
-                <ShieldCheck size={12} /> Segurança
-              </button>
+          <div className="min-w-0 leading-tight">
+            <div className="font-display truncate text-[15px] font-semibold tracking-tight text-white">Dossiê CONSEJ</div>
+            <div className="truncate text-[11px] text-sidebar-fg">
+              {membros.length} membro{membros.length !== 1 ? 's' : ''} cadastrado{membros.length !== 1 ? 's' : ''}
             </div>
+          </div>
+        </div>
+
+        <div className="px-5 pt-3">
+          <span
+            className="flex w-fit items-center gap-1.5 rounded-full border border-brand/40 bg-brand/15 px-3 py-1 text-xs font-semibold text-brand"
+            title="Ciclo ativo — mude na aba Ciclos"
+          >
+            <CalendarClock size={13} /> {cicloGlobal.cicloGlobal.ano} · {cicloGlobal.cicloGlobal.ciclo}
+          </span>
+        </div>
+
+        <nav className="flex gap-1 overflow-x-auto px-3 py-3 md:flex-col md:overflow-visible">
+          {NAV_GERAL.map((item) => (
             <button
-              onClick={onToggleTheme}
-              className="rounded-md p-2 text-ink-tertiary hover:bg-bg-secondary hover:text-ink-primary"
-              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+              key={item.key}
+              onClick={() => setActiveTab(item.key)}
+              className={cn(
+                'flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors',
+                activeTab === item.key
+                  ? 'bg-brand text-white shadow-card'
+                  : 'text-sidebar-fg hover:bg-sidebar-accent hover:text-white',
+              )}
             >
-              {theme === 'dark' ? '☀' : '☾'}
+              <span className={activeTab === item.key ? 'text-white' : 'text-sidebar-fg'}>{item.icon}</span>
+              {item.label}
             </button>
-            {onSignOut && (
-              <button
-                onClick={onSignOut}
-                className="rounded-md p-2 text-ink-tertiary hover:bg-bg-secondary hover:text-bad"
-                title="Sair"
-              >
-                <LogOut size={15} />
-              </button>
-            )}
+          ))}
+        </nav>
+
+        <div className="mt-auto flex items-center gap-1 border-t border-sidebar-border px-3 py-3">
+          <button
+            onClick={onToggleTheme}
+            className="rounded-md p-2 text-sidebar-fg hover:bg-sidebar-accent hover:text-white"
+            title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          >
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className="rounded-md p-2 text-sidebar-fg hover:bg-sidebar-accent hover:text-bad"
+              title="Sair"
+            >
+              <LogOut size={15} />
+            </button>
+          )}
+        </div>
+      </aside>
+
+      <div className="min-w-0 flex-1">
+        {/* Topbar do conteúdo */}
+        <header className="sticky top-0 z-10 border-b border-line bg-bg-primary px-6 py-4">
+          <div className="flex items-center justify-end">
             {activeTab === 'membros' && !quadroBloqueado && (
               <button
                 onClick={() => setShowNovo(true)}
@@ -283,10 +288,9 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
               </button>
             )}
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-5xl p-6 space-y-5">
+        <main className="mx-auto max-w-5xl p-6 space-y-5">
         {/* Dashboard do time */}
         {activeTab === 'dashboard' && (
           <TeamDashboard allDossies={allDossies} onSelectMembro={onSelect} cicloGlobal={cicloGlobal} />
@@ -556,7 +560,8 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
           </div>
         )}
         </>}
-      </main>
+        </main>
+      </div>
     </div>
   )
 }
