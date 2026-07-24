@@ -324,10 +324,12 @@ function membro(
   dataEntrada: string,
   kpisPorCiclo: KpiCiclo[] = [],
   cargoDuplo?: { cargoSecundario: string; areaSecundaria: string },
+  email?: string,
 ): Dossie {
   const base = criarDossieBase({
     id, nome, cargo, area, matricula: '', iniciais, acessoRestrito: false, ssoMfa: false,
     ...cargoDuplo,
+    ...(email ? { email } : {}),
   })
   base.perfil.dataEntrada = dataEntrada
   base.kpisPorCiclo = kpisPorCiclo
@@ -403,49 +405,49 @@ export const MOCK_MEMBROS: Dossie[] = [
   membro('gabi-domingues', 'Gabi Domingues', 'Diretora de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'GD', '', [],
     { cargoSecundario: 'Vice-Presidente', areaSecundaria: 'Diretoria de Vice-Presidência' }),
   membro('luna-cavalcanti', 'Luna Cavalcanti Ferreira de Melo', 'Diretora de Negócios', 'Diretoria de Negócios', 'LC', '', [],
-    { cargoSecundario: 'Diretora de Marketing', areaSecundaria: 'Diretoria de Marketing' }),
+    { cargoSecundario: 'Diretora de Marketing', areaSecundaria: 'Diretoria de Marketing' }, 'luna.melo@consej.com.br'),
 
   // Gerência
-  membro('camila-pereira', 'Camila Silveira de Medeiros Pereira', 'Gerente de Marketing', 'Diretoria de Marketing', 'CS', ''),
-  membro('davi-costa', 'Davi Gonçalves da Costa', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'DG', ''),
-  membro('isabela-barros', 'Isabela Fasanaro Barros', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'IF', ''),
-  membro('jose-arthur-paiva', 'José Arthur Nunes Amaral de Paiva', 'Gerente de Demandas', 'Diretoria de Demandas', 'JA', ''),
-  membro('maria-fernanda-silva', 'Maria Fernanda Lima Souza e Silva', 'Gerente de Demandas', 'Diretoria de Demandas', 'MF', ''),
-  membro('maria-isabel-dorini', 'Maria Isabel Miranda Bertoncini Dorini', 'Gerente de Demandas', 'Diretoria de Demandas', 'MI', ''),
-  membro('maria-julia-dantas', 'Maria Julia Dantas', 'Gerente de Negócios', 'Diretoria de Negócios', 'MJ', ''),
-  membro('matheus-cunha', 'Matheus Fonseca da Cunha', 'Gerente de Presidência', 'Diretoria de Presidência', 'MF', ''),
-  membro('ruan-moura', 'Ruan Hagno de Assis Moura', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'RH', ''),
+  membro('camila-pereira', 'Camila Silveira de Medeiros Pereira', 'Gerente de Marketing', 'Diretoria de Marketing', 'CS', '', [], undefined, 'camila.silveira@consej.com.br'),
+  membro('davi-costa', 'Davi Gonçalves da Costa', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'DG', '', [], undefined, 'davi.goncalves@consej.com.br'),
+  membro('isabela-barros', 'Isabela Fasanaro Barros', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'IF', '', [], undefined, 'isabela.fasanaro@consej.com.br'),
+  membro('jose-arthur-paiva', 'José Arthur Nunes Amaral de Paiva', 'Gerente de Demandas', 'Diretoria de Demandas', 'JA', '', [], undefined, 'jose.arthur@consej.com.br'),
+  membro('maria-fernanda-silva', 'Maria Fernanda Lima Souza e Silva', 'Gerente de Demandas', 'Diretoria de Demandas', 'MF', '', [], undefined, 'maria.fernanda@consej.com.br'),
+  membro('maria-isabel-dorini', 'Maria Isabel Miranda Bertoncini Dorini', 'Gerente de Demandas', 'Diretoria de Demandas', 'MI', '', [], undefined, 'maria.isabel@consej.com.br'),
+  membro('maria-julia-dantas', 'Maria Julia Dantas', 'Gerente de Negócios', 'Diretoria de Negócios', 'MJ', '', [], undefined, 'maria.dantas@consej.com.br'),
+  membro('matheus-cunha', 'Matheus Fonseca da Cunha', 'Gerente de Presidência', 'Diretoria de Presidência', 'MF', '', [], undefined, 'matheus.fonseca@consej.com.br'),
+  membro('ruan-moura', 'Ruan Hagno de Assis Moura', 'Gerente de Pesquisas e Pessoas', 'Diretoria de Pesquisas e Pessoas', 'RH', '', [], undefined, 'ruan.hagno@consej.com.br'),
 
   // Coordenadoria de Demandas
   membro('andre-mendonca', 'André Mendonça', 'Coordenadoria de Clientes', 'Diretoria de Demandas', 'AM', ''),
-  membro('arthur-nunes', 'Arthur Maia Nunes', 'Coordenadoria de Procedimentos Internos', 'Diretoria de Demandas', 'AM', ''),
-  membro('gustavo-henrique', 'Gustavo Henrique', 'Coordenadoria de Procedimentos Internos', 'Diretoria de Demandas', 'GH', ''),
+  membro('arthur-nunes', 'Arthur Maia Nunes', 'Coordenadoria de Procedimentos Internos', 'Diretoria de Demandas', 'AM', '', [], undefined, 'arthur.maia@consej.com.br'),
+  membro('gustavo-henrique', 'Gustavo Henrique', 'Coordenadoria de Procedimentos Internos', 'Diretoria de Demandas', 'GH', '', [], undefined, 'gustavo.henrique@consej.com.br'),
 
   // Coordenadoria de Marketing
   membro('ana-carolina-oliveira', 'Ana Carolina Azevedo Oliveira', 'Coordenadoria de Social Media', 'Diretoria de Marketing', 'AC', ''),
-  membro('fernanda-amorim', 'Fernanda Sâmara Rodrigues Amorim', 'Coordenadoria de Inbound Marketing', 'Diretoria de Marketing', 'FS', ''),
-  membro('valentina-vicioli', 'Valentina Vanzato Vicioli', 'Coordenadoria de Social Media', 'Diretoria de Marketing', 'VV', ''),
+  membro('fernanda-amorim', 'Fernanda Sâmara Rodrigues Amorim', 'Coordenadoria de Inbound Marketing', 'Diretoria de Marketing', 'FS', '', [], undefined, 'fernanda.samara@consej.com.br'),
+  membro('valentina-vicioli', 'Valentina Vanzato Vicioli', 'Coordenadoria de Social Media', 'Diretoria de Marketing', 'VV', '', [], undefined, 'valentina.vicioli@consej.com.br'),
 
   // Coordenadoria de Negócios
-  membro('hebert-rego', 'Hebert Vinícius Santos Rêgo', 'Growth', 'Diretoria de Negócios', 'HV', ''),
-  membro('joao-felipe-sa', 'João Felipe rosas de Sá', 'Closer', 'Diretoria de Negócios', 'JF', ''),
-  membro('larissa-vale', 'Larissa da Fonte Porto Carreiro de Lima Vale', 'Closer', 'Diretoria de Negócios', 'LD', ''),
-  membro('millena-moncores', 'Millena Corrêa Monçores', 'Growth', 'Diretoria de Negócios', 'MC', ''),
+  membro('hebert-rego', 'Hebert Vinícius Santos Rêgo', 'Growth', 'Diretoria de Negócios', 'HV', '', [], undefined, 'hebert.vinicius@consej.com.br'),
+  membro('joao-felipe-sa', 'João Felipe rosas de Sá', 'Closer', 'Diretoria de Negócios', 'JF', '', [], undefined, 'joao.felipe@consej.com.br'),
+  membro('larissa-vale', 'Larissa da Fonte Porto Carreiro de Lima Vale', 'Closer', 'Diretoria de Negócios', 'LD', '', [], undefined, 'larissa.fonte@consej.com.br'),
+  membro('millena-moncores', 'Millena Corrêa Monçores', 'Growth', 'Diretoria de Negócios', 'MC', '', [], undefined, 'millena.moncores@consej.com.br'),
 
   // Coordenadoria de Pesquisas e Pessoas
-  membro('guilherme-chaves-silva', 'Guilherme Chaves Lopes de Lima e Silva', 'Coordenadoria de Experiência do Time', 'Diretoria de Pesquisas e Pessoas', 'GC', ''),
+  membro('guilherme-chaves-silva', 'Guilherme Chaves Lopes de Lima e Silva', 'Coordenadoria de Experiência do Time', 'Diretoria de Pesquisas e Pessoas', 'GC', '', [], undefined, 'guilherme.chaves@consej.com.br'),
   membro('lara-barros', 'Lara Gomes Pereira Barros', 'Coordenadoria de Experiência do Time', 'Diretoria de Pesquisas e Pessoas', 'LG', ''),
 
   // Coordenadoria de Presidência
-  membro('joao-vitor-silva', 'João Vitor Pessoa Silva', 'Coordenadoria de Parcerias', 'Diretoria de Presidência', 'JV', ''),
-  membro('julia-monte', 'Júlia Silva do Monte', 'Coordenadoria de Parcerias', 'Diretoria de Presidência', 'JS', ''),
-  membro('kelvin-watson', 'Kelvin Watson', 'Coordenadoria de Operações', 'Diretoria de Presidência', 'KW', ''),
-  membro('lucas-holanda-souza', 'Lucas Holanda Campelo Martins de Souza', 'Coordenadoria de Operações', 'Diretoria de Presidência', 'LH', ''),
+  membro('joao-vitor-silva', 'João Vitor Pessoa Silva', 'Coordenadoria de Parcerias', 'Diretoria de Presidência', 'JV', '', [], undefined, 'joao.pessoa@consej.com.br'),
+  membro('julia-monte', 'Júlia Silva do Monte', 'Coordenadoria de Parcerias', 'Diretoria de Presidência', 'JS', '', [], undefined, 'julia.monte@consej.com.br'),
+  membro('kelvin-watson', 'Kelvin Watson', 'Coordenadoria de Operações', 'Diretoria de Presidência', 'KW', '', [], undefined, 'kelvin.watson@consej.com.br'),
+  membro('lucas-holanda-souza', 'Lucas Holanda Campelo Martins de Souza', 'Coordenadoria de Operações', 'Diretoria de Presidência', 'LH', '', [], undefined, 'lucas.holanda@consej.com.br'),
 
   // Coordenadoria de Vice-Presidência
-  membro('gabriel-araujo', 'Gabriel Araujo', 'Coordenadoria de Finanças', 'Diretoria de Vice-Presidência', 'GA', ''),
-  membro('ivyson-melo', 'Ivyson Henrique Oliveira Melo', 'Coordenadoria de Estratégia', 'Diretoria de Vice-Presidência', 'IH', ''),
-  membro('leticia-caldas', 'Leticia Gomes Maia Caldas', 'Coordenadoria de Estratégia', 'Diretoria de Vice-Presidência', 'LG', ''),
+  membro('gabriel-araujo', 'Gabriel Araujo', 'Coordenadoria de Finanças', 'Diretoria de Vice-Presidência', 'GA', '', [], undefined, 'gabriel.lima@consej.com.br'),
+  membro('ivyson-melo', 'Ivyson Henrique Oliveira Melo', 'Coordenadoria de Estratégia', 'Diretoria de Vice-Presidência', 'IH', '', [], undefined, 'ivyson.henrique@consej.com.br'),
+  membro('leticia-caldas', 'Leticia Gomes Maia Caldas', 'Coordenadoria de Estratégia', 'Diretoria de Vice-Presidência', 'LG', '', [], undefined, 'leticia.caldas@consej.com.br'),
   membro('mateus-almeida', 'Mateus Oliveira de Almeida', 'Coordenadoria de Inovação', 'Diretoria de Vice-Presidência', 'MO', ''),
 ]
 
