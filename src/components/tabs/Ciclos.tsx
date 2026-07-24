@@ -1,15 +1,32 @@
 import { useState } from 'react'
-import { CalendarClock, Lock, AlertTriangle, Check, X, Users, ShieldCheck, ArrowLeftCircle } from 'lucide-react'
+import { CalendarClock, Lock, AlertTriangle, Check, X, Users, ShieldCheck, ArrowLeftCircle, CalendarDays } from 'lucide-react'
 import { Card, SectionTitle } from '../Card'
 import { cn } from '@/lib/ui'
-import { CICLOS, type CicloTag, type UseCicloGlobal } from '@/hooks/useCicloGlobal'
+import { CICLOS, chaveCiclo, type CicloTag, type UseCicloGlobal } from '@/hooks/useCicloGlobal'
+
+function formatarBr(iso: string) {
+  const [y, m, d] = iso.split('-')
+  return `${d}/${m}/${y}`
+}
 
 interface Props {
   cicloGlobal: UseCicloGlobal
 }
 
 export function Ciclos({ cicloGlobal }: Props) {
-  const { cicloGlobal: atual, anosFechados, selecionarCiclo, podeAvancarAno, confirmarVirarAno, podeVoltarAno, confirmarVoltarAno, estaNoPassado, voltarParaAtual } = cicloGlobal
+  const {
+    cicloGlobal: atual,
+    anosFechados,
+    selecionarCiclo,
+    podeAvancarAno,
+    confirmarVirarAno,
+    podeVoltarAno,
+    confirmarVoltarAno,
+    estaNoPassado,
+    voltarParaAtual,
+    datasCiclos,
+    definirDatasCiclo,
+  } = cicloGlobal
   const [confirmando, setConfirmando] = useState(false)
   const [confirmandoVolta, setConfirmandoVolta] = useState(false)
   const [pendente, setPendente] = useState<CicloTag | null>(null)
@@ -83,7 +100,7 @@ export function Ciclos({ cicloGlobal }: Props) {
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-4">
+        <div className="mt-4 flex flex-wrap items-center gap-4">
           <div className="font-display text-4xl font-bold text-brand">{atual.ano}</div>
           <div className="flex rounded-lg border border-line bg-bg-secondary p-1">
             {CICLOS.map((c) => (
@@ -99,6 +116,12 @@ export function Ciclos({ cicloGlobal }: Props) {
               </button>
             ))}
           </div>
+          {datasCiclos[chaveCiclo(atual.ano, atual.ciclo)] && (
+            <span className="flex items-center gap-1.5 text-xs text-ink-tertiary">
+              <CalendarDays size={13} />
+              {formatarBr(datasCiclos[chaveCiclo(atual.ano, atual.ciclo)].inicio)} – {formatarBr(datasCiclos[chaveCiclo(atual.ano, atual.ciclo)].fim)}
+            </span>
+          )}
         </div>
 
         {podeAvancarAno && (
@@ -174,6 +197,25 @@ export function Ciclos({ cicloGlobal }: Props) {
       </Card>
 
       <Card className="p-4 sm:p-5">
+        <SectionTitle icon={<CalendarDays size={15} />}>Datas dos ciclos — {atual.ano}</SectionTitle>
+        <p className="mt-1 text-xs text-ink-secondary">
+          Defina o período (início/fim) de cada ciclo do ano. É só informativo — mostra o prazo pra todo mundo, mas
+          não interfere em qual ciclo está aberto pra edição.
+        </p>
+        <div className="mt-3 space-y-2">
+          {CICLOS.map((c) => (
+            <LinhaDataCiclo
+              key={c}
+              ciclo={c}
+              ativo={atual.ciclo === c}
+              datas={datasCiclos[chaveCiclo(atual.ano, c)]}
+              onSalvar={(datas) => definirDatasCiclo(atual.ano, c, datas)}
+            />
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-4 sm:p-5">
         <SectionTitle icon={<ShieldCheck size={15} />}>O que muda (e o que não muda) ao virar o ano</SectionTitle>
         <ul className="mt-2 space-y-2 text-xs text-ink-secondary">
           <li className="flex gap-2"><Lock size={13} className="mt-0.5 shrink-0 text-warn" /> KPIs, condutas PDAA e abonos do ano fechado passam a ser só leitura — continuam no histórico de cada dossiê.</li>
@@ -196,6 +238,56 @@ export function Ciclos({ cicloGlobal }: Props) {
             Pra ver os dados de um ano fechado, abra o dossiê do membro e use as abas de ano nos gráficos.
           </p>
         </Card>
+      )}
+    </div>
+  )
+}
+
+function LinhaDataCiclo({
+  ciclo,
+  ativo,
+  datas,
+  onSalvar,
+}: {
+  ciclo: CicloTag
+  ativo: boolean
+  datas: { inicio: string; fim: string } | undefined
+  onSalvar: (datas: { inicio: string; fim: string } | undefined) => void
+}) {
+  const [inicio, setInicio] = useState(datas?.inicio ?? '')
+  const [fim, setFim] = useState(datas?.fim ?? '')
+  const alterado = inicio !== (datas?.inicio ?? '') || fim !== (datas?.fim ?? '')
+
+  function salvar() {
+    if (inicio && fim) onSalvar({ inicio, fim })
+    else if (!inicio && !fim) onSalvar(undefined)
+  }
+
+  return (
+    <div className={cn('flex flex-wrap items-center gap-2 rounded-lg border p-2.5', ativo ? 'border-brand/40 bg-brand/5' : 'border-line bg-bg-secondary')}>
+      <span className={cn('w-8 shrink-0 text-sm font-semibold', ativo ? 'text-brand' : 'text-ink-primary')}>{ciclo}</span>
+      <input
+        type="date"
+        value={inicio}
+        onChange={(e) => setInicio(e.target.value)}
+        className="rounded border border-line bg-bg-primary px-2 py-1 text-xs text-ink-primary focus:border-brand focus:outline-none"
+      />
+      <span className="text-ink-tertiary">–</span>
+      <input
+        type="date"
+        value={fim}
+        onChange={(e) => setFim(e.target.value)}
+        min={inicio || undefined}
+        className="rounded border border-line bg-bg-primary px-2 py-1 text-xs text-ink-primary focus:border-brand focus:outline-none"
+      />
+      {alterado && (
+        <button
+          onClick={salvar}
+          disabled={Boolean(inicio) !== Boolean(fim)}
+          className="ml-auto flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-[11px] font-medium text-white hover:bg-brand/90 disabled:opacity-40"
+        >
+          <Check size={11} /> Salvar
+        </button>
       )}
     </div>
   )

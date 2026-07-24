@@ -45,6 +45,24 @@ function saveCicloMaisRecente(c: CicloRef) {
   localStorage.setItem(LS_CICLO_RECENTE, JSON.stringify(c))
 }
 
+export interface DatasCiclo {
+  inicio: string // "YYYY-MM-DD"
+  fim: string
+}
+
+const LS_DATAS_CICLOS = 'dossie_datas_ciclos'
+
+export function chaveCiclo(ano: number, ciclo: CicloTag) {
+  return `${ano}-${ciclo}`
+}
+
+function loadDatasCiclos(): Record<string, DatasCiclo> {
+  try { return JSON.parse(localStorage.getItem(LS_DATAS_CICLOS) ?? '{}') } catch { return {} }
+}
+function saveDatasCiclos(datas: Record<string, DatasCiclo>) {
+  localStorage.setItem(LS_DATAS_CICLOS, JSON.stringify(datas))
+}
+
 export interface UseCicloGlobal {
   cicloGlobal: CicloRef
   anosFechados: Set<number>
@@ -64,12 +82,26 @@ export interface UseCicloGlobal {
   estaNoPassado: boolean
   /** Pula direto de volta pro ciclo mais recente (sai do modo histórico). */
   voltarParaAtual: () => void
+  /** Datas (início/fim) configuradas por ciclo, indexadas por "AAAA-CX". */
+  datasCiclos: Record<string, DatasCiclo>
+  /** Define ou limpa (undefined) o período de um ciclo específico. */
+  definirDatasCiclo: (ano: number, ciclo: CicloTag, datas: DatasCiclo | undefined) => void
 }
 
 export function useCicloGlobal(): UseCicloGlobal {
   const [cicloGlobal, setCicloGlobal] = useState<CicloRef>(loadCicloGlobal)
   const [anosFechados, setAnosFechados] = useState<Set<number>>(loadAnosFechados)
   const [cicloMaisRecente, setCicloMaisRecente] = useState<CicloRef>(() => loadCicloMaisRecente(loadCicloGlobal()))
+  const [datasCiclos, setDatasCiclos] = useState<Record<string, DatasCiclo>>(loadDatasCiclos)
+
+  function definirDatasCiclo(ano: number, ciclo: CicloTag, datas: DatasCiclo | undefined) {
+    const key = chaveCiclo(ano, ciclo)
+    const next = { ...datasCiclos }
+    if (datas) next[key] = datas
+    else delete next[key]
+    setDatasCiclos(next)
+    saveDatasCiclos(next)
+  }
 
   function selecionarCiclo(ciclo: CicloTag) {
     const next = { ...cicloGlobal, ciclo }
@@ -115,6 +147,8 @@ export function useCicloGlobal(): UseCicloGlobal {
     anoEstaFechado: (ano: number) => anosFechados.has(ano),
     estaNoPassado: cicloGlobal.ano !== cicloMaisRecente.ano || cicloGlobal.ciclo !== cicloMaisRecente.ciclo,
     voltarParaAtual,
+    datasCiclos,
+    definirDatasCiclo,
   }
 }
 
