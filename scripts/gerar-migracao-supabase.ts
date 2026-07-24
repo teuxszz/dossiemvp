@@ -12,13 +12,18 @@ function sqlJson(v: unknown): string {
   return `'${JSON.stringify(v).replace(/'/g, "''")}'::jsonb`
 }
 
-const linhas = MOCK_MEMBROS.map((d) => {
+// Só migra quem já tem e-mail de login vinculado — sem e-mail não tem como
+// autenticar contra essa linha mesmo, então não há motivo pra criá-la ainda.
+const comEmail = MOCK_MEMBROS.filter((d) => !!d.colaborador.email)
+
+const linhas = comEmail.map((d) => {
   const { colaborador, ...dados } = d
   return `  (${sqlString(colaborador.id)}, ${sqlString(colaborador.nome)}, ${sqlString(colaborador.cargo)}, ${sqlString(colaborador.area)}, ${sqlString(colaborador.matricula || '')}, ${sqlString(colaborador.iniciais)}, ${colaborador.acessoRestrito ?? false}, ${colaborador.ssoMfa ?? false}, ${sqlString(colaborador.email ?? null)}, ${sqlJson(dados)})`
 })
 
-const sql = `-- Migração única: insere (ou atualiza) todos os membros do organograma
--- na tabela colaboradores do Supabase. Gerado a partir de src/lib/mockData.ts.
+const sql = `-- Migração única: insere (ou atualiza) os membros do organograma que já têm
+-- e-mail de login vinculado na tabela colaboradores do Supabase.
+-- Gerado a partir de src/lib/mockData.ts (${comEmail.length} membro(s) com e-mail).
 -- Rode isso inteiro no SQL Editor do Supabase, uma vez só.
 
 insert into public.colaboradores
