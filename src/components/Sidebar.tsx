@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
-import { LayoutDashboard, IdCard, GitCommitVertical, MessageCircle, Lock, ShieldCheck, ShieldAlert, PackageCheck, CalendarClock } from 'lucide-react'
+import { LayoutDashboard, IdCard, GitCommitVertical, MessageCircle, ShieldCheck, ShieldAlert, PackageCheck, CalendarClock } from 'lucide-react'
 import { cn } from '@/lib/ui'
 
-export type TabKey = 'dashboard' | 'perfil' | 'pdaa' | 'historico' | 'feedbacks' | 'entregas' | 'seguranca'
+export type TabKey = 'dashboard' | 'perfil' | 'pdaa' | 'historico' | 'feedbacks' | 'entregas'
 
 const NAV: { key: TabKey; label: string; icon: ReactNode }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={17} /> },
@@ -11,7 +11,6 @@ const NAV: { key: TabKey; label: string; icon: ReactNode }[] = [
   { key: 'historico', label: 'Histórico', icon: <GitCommitVertical size={17} /> },
   { key: 'feedbacks', label: 'Feedbacks', icon: <MessageCircle size={17} /> },
   { key: 'entregas', label: 'Entregas', icon: <PackageCheck size={17} /> },
-  { key: 'seguranca', label: 'Segurança', icon: <Lock size={17} /> },
 ]
 
 export function Sidebar({ active, onChange, isAdmin, cicloAtual }: { active: TabKey; onChange: (t: TabKey) => void; isAdmin: boolean; cicloAtual: { ano: number; ciclo: string } }) {

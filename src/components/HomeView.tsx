@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut, UserCog, Pencil, CalendarClock } from 'lucide-react'
+import { Search, Plus, X, Check, Users, Trash2, LayoutDashboard, Eye, EyeOff, FolderClosed, ArrowLeft, LogOut, UserCog, Pencil, CalendarClock, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/ui'
 import { TeamDashboard } from './TeamDashboard'
 import { Administradores } from './tabs/Administradores'
 import { Ciclos } from './tabs/Ciclos'
+import { Seguranca } from './tabs/Seguranca'
 import type { UseCicloGlobal } from '@/hooks/useCicloGlobal'
 import type { Colaborador, Dossie } from '@/lib/types'
 
@@ -132,7 +133,7 @@ interface Props {
 export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveMembro, onUpdateMembro, theme, onToggleTheme, onSignOut, cicloGlobal }: Props) {
   const [editCargo, setEditCargo] = useState<Membro | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'membros' | 'dashboard' | 'ciclos' | 'administradores'>('membros')
+  const [activeTab, setActiveTab] = useState<'membros' | 'dashboard' | 'ciclos' | 'administradores' | 'seguranca'>('membros')
 
   // Ano fechado (avançado ou visto pelo histórico) — só dá pra excluir/arquivar
   // membro, nada de criar ou trocar cargo, pra não bagunçar o quadro congelado.
@@ -250,6 +251,12 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
               >
                 <UserCog size={12} /> Administradores
               </button>
+              <button
+                onClick={() => setActiveTab('seguranca')}
+                className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors', activeTab === 'seguranca' ? 'bg-bg-primary text-ink-primary shadow-sm' : 'text-ink-tertiary hover:text-ink-primary')}
+              >
+                <ShieldCheck size={12} /> Segurança
+              </button>
             </div>
             <button
               onClick={onToggleTheme}
@@ -288,6 +295,10 @@ export function HomeView({ membros, allDossies, onSelect, onAddMembro, onRemoveM
         {activeTab === 'ciclos' && <Ciclos cicloGlobal={cicloGlobal} />}
 
         {activeTab === 'administradores' && <Administradores />}
+
+        {activeTab === 'seguranca' && (
+          <Seguranca allDossies={allDossies} onUpdateMembro={onUpdateMembro} cicloGlobal={cicloGlobal} />
+        )}
 
         {activeTab === 'membros' && <>
         {quadroBloqueado && (

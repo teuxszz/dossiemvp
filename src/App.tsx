@@ -9,7 +9,6 @@ import { Pdaa } from './components/tabs/Pdaa'
 import { Historico } from './components/tabs/Historico'
 import { Feedbacks } from './components/tabs/Feedbacks'
 import { Entregas } from './components/tabs/Entregas'
-import { Seguranca } from './components/tabs/Seguranca'
 import { FeedbackForm } from './components/FeedbackForm'
 import { useDossie } from './hooks/useDossie'
 import { useAuth } from './hooks/useAuth'
@@ -400,7 +399,6 @@ function DossierView({ dossie, allDossies, loading, error, source, theme, onTogg
                   isAdmin={isAdmin}
                 />
               )}
-              {tab === 'seguranca' && <Seguranca dossie={dossie} />}
             </main>
           </>
         )}
