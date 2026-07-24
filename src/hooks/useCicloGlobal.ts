@@ -47,7 +47,9 @@ function saveCicloMaisRecente(c: CicloRef) {
 
 export interface DatasCiclo {
   inicio: string // "YYYY-MM-DD"
-  fim: string
+  /** Opcional — deixe em branco quando não há data de encerramento definida. O
+   *  ciclo fica "em aberto" a partir do início até o próximo ciclo começar. */
+  fim?: string
 }
 
 const LS_DATAS_CICLOS = 'dossie_datas_ciclos'
@@ -70,16 +72,26 @@ function hojeISO(): string {
   return `${d.getFullYear()}-${mes}-${dia}`
 }
 
-// Acha, entre os ciclos do ano, qual tem a data de hoje dentro do período
-// configurado (início ≤ hoje ≤ fim). Comparação por string ISO funciona
-// porque "YYYY-MM-DD" ordena igual cronologicamente.
+// Acha, entre os ciclos do ano, qual está ativo hoje. Um ciclo sem data de
+// fim fica "em aberto": continua valendo até o de início mais recente que já
+// começou (ou seja, o próximo ciclo cadastrado supera ele automaticamente
+// assim que a própria data de início dele chegar — sem precisar chutar uma
+// data de fim pro anterior). Se nenhum ciclo com início já começado for
+// encontrado (ou o ciclo achado já passou do próprio fim, sem substituto
+// ainda), não sugere nada — evita ficar pulando pra trás sem necessidade.
 function cicloPelaData(ano: number, datas: Record<string, DatasCiclo>): CicloTag | null {
   const hoje = hojeISO()
+  let melhor: { ciclo: CicloTag; inicio: string } | null = null
+
   for (const c of CICLOS) {
     const d = datas[chaveCiclo(ano, c)]
-    if (d && d.inicio && d.fim && hoje >= d.inicio && hoje <= d.fim) return c
+    if (!d || !d.inicio) continue
+    if (d.inicio > hoje) continue // ainda não começou
+    if (d.fim && d.fim < hoje) continue // já tem fim definido e já passou
+    if (!melhor || d.inicio > melhor.inicio) melhor = { ciclo: c, inicio: d.inicio }
   }
-  return null
+
+  return melhor?.ciclo ?? null
 }
 
 export interface UseCicloGlobal {

@@ -124,13 +124,16 @@ export function Ciclos({ cicloGlobal }: Props) {
           {datasCiclos[chaveCiclo(atual.ano, atual.ciclo)] && (
             <span className="flex items-center gap-1.5 text-xs text-ink-tertiary">
               <CalendarDays size={13} />
-              {formatarBr(datasCiclos[chaveCiclo(atual.ano, atual.ciclo)].inicio)} – {formatarBr(datasCiclos[chaveCiclo(atual.ano, atual.ciclo)].fim)}
+              {formatarBr(datasCiclos[chaveCiclo(atual.ano, atual.ciclo)].inicio)} –{' '}
+              {datasCiclos[chaveCiclo(atual.ano, atual.ciclo)].fim
+                ? formatarBr(datasCiclos[chaveCiclo(atual.ano, atual.ciclo)].fim as string)
+                : 'em aberto'}
             </span>
           )}
           {!estaNoPassado && (() => {
             const d = datasCiclos[chaveCiclo(atual.ano, atual.ciclo)]
             const hoje = hojeISO()
-            const dentroDoPeriodo = d && hoje >= d.inicio && hoje <= d.fim
+            const dentroDoPeriodo = d && hoje >= d.inicio && (!d.fim || hoje <= d.fim)
             return dentroDoPeriodo ? (
               <span className="flex items-center gap-1 rounded-full bg-good-soft px-2 py-0.5 text-[11px] font-medium text-good">
                 <span className="h-1.5 w-1.5 rounded-full bg-good" /> acompanhando o calendário
@@ -218,8 +221,9 @@ export function Ciclos({ cicloGlobal }: Props) {
       <Card className="p-4 sm:p-5">
         <SectionTitle icon={<CalendarDays size={15} />}>Datas dos ciclos — {atual.ano}</SectionTitle>
         <p className="mt-1 text-xs text-ink-secondary">
-          Defina o período (início/fim) de cada ciclo do ano. É só informativo — mostra o prazo pra todo mundo, mas
-          não interfere em qual ciclo está aberto pra edição.
+          Defina o início (e o fim, se já souber) de cada ciclo — isso é o que o painel usa pra trocar de ciclo
+          sozinho conforme o calendário. Não sabe quando um ciclo termina ainda? Deixe o campo de fim em branco: ele
+          fica "em aberto" e continua valendo até você preencher o início do próximo.
         </p>
         <div className="mt-3 space-y-2">
           {CICLOS.map((c) => (
@@ -270,16 +274,16 @@ function LinhaDataCiclo({
 }: {
   ciclo: CicloTag
   ativo: boolean
-  datas: { inicio: string; fim: string } | undefined
-  onSalvar: (datas: { inicio: string; fim: string } | undefined) => void
+  datas: { inicio: string; fim?: string } | undefined
+  onSalvar: (datas: { inicio: string; fim?: string } | undefined) => void
 }) {
   const [inicio, setInicio] = useState(datas?.inicio ?? '')
   const [fim, setFim] = useState(datas?.fim ?? '')
   const alterado = inicio !== (datas?.inicio ?? '') || fim !== (datas?.fim ?? '')
 
   function salvar() {
-    if (inicio && fim) onSalvar({ inicio, fim })
-    else if (!inicio && !fim) onSalvar(undefined)
+    if (inicio) onSalvar({ inicio, fim: fim || undefined })
+    else onSalvar(undefined)
   }
 
   return (
@@ -297,12 +301,15 @@ function LinhaDataCiclo({
         value={fim}
         onChange={(e) => setFim(e.target.value)}
         min={inicio || undefined}
+        placeholder="em aberto"
+        title="Deixe em branco se ainda não tem data de encerramento definida"
         className="rounded border border-line bg-bg-primary px-2 py-1 text-xs text-ink-primary focus:border-brand focus:outline-none"
       />
+      {!fim && <span className="text-[11px] italic text-ink-tertiary">em aberto</span>}
       {alterado && (
         <button
           onClick={salvar}
-          disabled={Boolean(inicio) !== Boolean(fim)}
+          disabled={!inicio && Boolean(fim)}
           className="ml-auto flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-[11px] font-medium text-white hover:bg-brand/90 disabled:opacity-40"
         >
           <Check size={11} /> Salvar
