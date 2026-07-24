@@ -40,6 +40,22 @@ const recomIcon: Record<Tone, typeof TrendingUp> = {
 // Campos que o próprio membro (não-admin) pode editar — o resto é só leitura pra ele.
 const CAMPOS_AUTOEDITAVEIS = new Set<keyof PerfilType>(['celular', 'email', 'periodoCurso', 'dataEntrada', 'nascimento'])
 
+// Campos de data — usam <input type="date"> em vez de texto livre.
+const CAMPOS_DATA = new Set<keyof PerfilType>(['dataEntrada', 'nascimento'])
+
+// <input type="date"> exige yyyy-mm-dd; convertemos de/para o formato exibido (dd/mm/aaaa).
+function paraInputDate(v: string): string {
+  if (!v) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v
+  const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : ''
+}
+function paraDataBR(v: string): string {
+  if (!v) return ''
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : v
+}
+
 function DadosMembro({
   dossie,
   cargoAtual,
@@ -140,14 +156,27 @@ function DadosMembro({
               <r.icon size={15} className="shrink-0 text-ink-tertiary" />
               <span className="text-ink-secondary">{r.label}</span>
               {podeEditar ? (
-                <input
-                  value={String(draft[r.field as keyof typeof draft] ?? '')}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, [r.field]: e.target.value }))}
-                  className="ml-auto w-44 rounded border border-line bg-bg-tertiary px-2 py-0.5 text-right text-xs text-ink-primary focus:border-brand focus:outline-none"
-                />
+                CAMPOS_DATA.has(r.field as keyof PerfilType) ? (
+                  <input
+                    type="date"
+                    value={paraInputDate(String(draft[r.field as keyof typeof draft] ?? ''))}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, [r.field]: e.target.value }))}
+                    className="ml-auto w-44 rounded border border-line bg-bg-tertiary px-2 py-0.5 text-right text-xs text-ink-primary focus:border-brand focus:outline-none"
+                  />
+                ) : (
+                  <input
+                    value={String(draft[r.field as keyof typeof draft] ?? '')}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, [r.field]: e.target.value }))}
+                    className="ml-auto w-44 rounded border border-line bg-bg-tertiary px-2 py-0.5 text-right text-xs text-ink-primary focus:border-brand focus:outline-none"
+                  />
+                )
               ) : (
                 <span className="ml-auto text-right font-medium text-ink-primary">
-                  {r.field === 'cargoAtual' ? p.cargoAtual : String(p[r.field as keyof PerfilType] ?? '')}
+                  {r.field === 'cargoAtual'
+                    ? p.cargoAtual
+                    : CAMPOS_DATA.has(r.field as keyof PerfilType)
+                      ? paraDataBR(String(p[r.field as keyof PerfilType] ?? ''))
+                      : String(p[r.field as keyof PerfilType] ?? '')}
                 </span>
               )}
             </div>
