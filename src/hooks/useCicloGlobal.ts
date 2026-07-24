@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export type CicloTag = 'C1' | 'C2' | 'C3' | 'C4'
 export interface CicloRef {
@@ -61,6 +61,25 @@ function loadDatasCiclos(): Record<string, DatasCiclo> {
 }
 function saveDatasCiclos(datas: Record<string, DatasCiclo>) {
   localStorage.setItem(LS_DATAS_CICLOS, JSON.stringify(datas))
+}
+
+function hojeISO(): string {
+  const d = new Date()
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  const dia = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mes}-${dia}`
+}
+
+// Acha, entre os ciclos do ano, qual tem a data de hoje dentro do período
+// configurado (início ≤ hoje ≤ fim). Comparação por string ISO funciona
+// porque "YYYY-MM-DD" ordena igual cronologicamente.
+function cicloPelaData(ano: number, datas: Record<string, DatasCiclo>): CicloTag | null {
+  const hoje = hojeISO()
+  for (const c of CICLOS) {
+    const d = datas[chaveCiclo(ano, c)]
+    if (d && d.inicio && d.fim && hoje >= d.inicio && hoje <= d.fim) return c
+  }
+  return null
 }
 
 export interface UseCicloGlobal {
@@ -135,6 +154,32 @@ export function useCicloGlobal(): UseCicloGlobal {
     setCicloGlobal(cicloMaisRecente)
     saveCicloGlobal(cicloMaisRecente)
   }
+
+  // Acompanha o calendário: se hoje cair dentro do período configurado de um
+  // ciclo diferente do ativo (e não tiver ninguém navegando pelo histórico),
+  // troca sozinho — sem confirmação, porque não é uma ação manual da pessoa,
+  // é só o painel reconhecendo em que ciclo estamos de verdade.
+  useEffect(() => {
+    const estaNoHistorico = cicloGlobal.ano !== cicloMaisRecente.ano || cicloGlobal.ciclo !== cicloMaisRecente.ciclo
+    if (estaNoHistorico) return
+
+    function conferir() {
+      const encontrado = cicloPelaData(cicloMaisRecente.ano, datasCiclos)
+      if (encontrado && encontrado !== cicloMaisRecente.ciclo) {
+        const next: CicloRef = { ano: cicloMaisRecente.ano, ciclo: encontrado }
+        setCicloGlobal(next)
+        saveCicloGlobal(next)
+        setCicloMaisRecente(next)
+        saveCicloMaisRecente(next)
+      }
+    }
+
+    conferir()
+    // Reconfere periodicamente pra sessões que ficam abertas atravessando a virada de um ciclo pro outro.
+    const id = setInterval(conferir, 30 * 60 * 1000)
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datasCiclos, cicloMaisRecente.ano, cicloMaisRecente.ciclo, cicloGlobal.ano, cicloGlobal.ciclo])
 
   return {
     cicloGlobal,

@@ -9,6 +9,11 @@ function formatarBr(iso: string) {
   return `${d}/${m}/${y}`
 }
 
+function hojeISO() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 interface Props {
   cicloGlobal: UseCicloGlobal
 }
@@ -122,7 +127,21 @@ export function Ciclos({ cicloGlobal }: Props) {
               {formatarBr(datasCiclos[chaveCiclo(atual.ano, atual.ciclo)].inicio)} – {formatarBr(datasCiclos[chaveCiclo(atual.ano, atual.ciclo)].fim)}
             </span>
           )}
+          {!estaNoPassado && (() => {
+            const d = datasCiclos[chaveCiclo(atual.ano, atual.ciclo)]
+            const hoje = hojeISO()
+            const dentroDoPeriodo = d && hoje >= d.inicio && hoje <= d.fim
+            return dentroDoPeriodo ? (
+              <span className="flex items-center gap-1 rounded-full bg-good-soft px-2 py-0.5 text-[11px] font-medium text-good">
+                <span className="h-1.5 w-1.5 rounded-full bg-good" /> acompanhando o calendário
+              </span>
+            ) : null
+          })()}
         </div>
+        <p className="mt-2 text-[11px] text-ink-tertiary">
+          Com as datas preenchidas, o ciclo ativo troca sozinho quando o calendário chegar no período de outro
+          ciclo — não precisa lembrar de mudar manualmente.
+        </p>
 
         {podeAvancarAno && (
           <div className="mt-4 rounded-lg border border-warn/30 bg-warn/5 p-4">
