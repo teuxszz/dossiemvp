@@ -282,7 +282,7 @@ export function criarDossieBase(colaborador: Colaborador): Dossie {
       dataEntrada: '',
       nascimento: '',
       celular: '',
-      email: '',
+      email: colaborador.email ?? '',
       diretoriaAtual: colaborador.area,
       coordenadoriaAtual: '',
       diretoriasAnteriores: [],
